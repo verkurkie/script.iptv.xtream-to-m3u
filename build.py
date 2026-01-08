@@ -66,12 +66,26 @@ def update_changelog(new_version, dry_run=False):
     print(f"Collecting commits in range: {commit_range}")
 
     try:
+        # --no-merges removes standard branch merge noise
         raw_commits = subprocess.check_output(
-            ["git", "log", commit_range, "--pretty=- %s"], text=True
+            ["git", "log", commit_range, "--no-merges", "--pretty=- %s"], text=True
         ).strip()
-        # Filter out [skip ci] commits
+
+        # Patterns that should never appear in the changelog
+        ignore_patterns = [
+            "skip ci",
+            "dependabot",
+            "merged in",
+            "Signed-off-by",
+        ]
+
         commits = "\n".join(
-            [c for c in raw_commits.split("\n") if "[skip ci]" not in c and c.strip()]
+            [
+                c
+                for c in raw_commits.split("\n")
+                if c.strip()
+                and not any(p.lower() in c.lower() for p in ignore_patterns)
+            ]
         )
     except Exception:
         commits = "- Manual build/release"
