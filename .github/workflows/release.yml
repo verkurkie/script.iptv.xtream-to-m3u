@@ -1,0 +1,54 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install python-semantic-release
+
+      - name: Python Semantic Release
+        id: semantic
+        uses: python-semantic-release/python-semantic-release@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Version
+        if: steps.semantic.outputs.released == 'true'
+        run: python build.py --version ${{ steps.semantic.outputs.version }}
+
+      - name: Commit version bump
+        if: steps.semantic.outputs.released == 'true'
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add addon.xml changelog.txt
+          git commit -m "chore: bump version to ${{ steps.semantic.outputs.version }} [skip ci]"
+          git push
+
+      - name: GitHub Release
+        if: steps.semantic.outputs.released == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: script.iptv.xtream-to-m3u-*.zip
+          tag_name: v${{ steps.semantic.outputs.version }}
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
