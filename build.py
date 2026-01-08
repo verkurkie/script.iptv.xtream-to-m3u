@@ -66,9 +66,13 @@ def update_changelog(new_version, dry_run=False):
     print(f"Collecting commits in range: {commit_range}")
 
     try:
-        commits = subprocess.check_output(
+        raw_commits = subprocess.check_output(
             ["git", "log", commit_range, "--pretty=- %s"], text=True
         ).strip()
+        # Filter out [skip ci] commits
+        commits = "\n".join(
+            [c for c in raw_commits.split("\n") if "[skip ci]" not in c and c.strip()]
+        )
     except Exception:
         commits = "- Manual build/release"
 
