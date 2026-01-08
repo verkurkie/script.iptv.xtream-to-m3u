@@ -1,5 +1,6 @@
 v1.0.1
-- No changes recorded
+- ci: update toml file to fix error in PSR
+- fix: fix issues with semantic-release
 
 v1.0.0
 - Initial stable release
