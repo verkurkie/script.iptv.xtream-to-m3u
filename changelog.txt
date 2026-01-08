@@ -1,3 +1,6 @@
+v1.0.3
+- ci: exclude more commit messages from changelog
+
 v1.0.2
 - chore: manual update to changelog.txt
 - fix: fix changelog updates to include all commit messages
