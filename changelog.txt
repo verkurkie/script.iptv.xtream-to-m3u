@@ -1,3 +1,9 @@
+v1.0.4
+- 1.0.4
+- fix: the resources 'lib' folder was ignored by .gitignore
+- ci: fix semantic-release
+- ci: update github workflow to use a cached native python environment
+
 v1.0.3
 - ci: exclude more commit messages from changelog
 
