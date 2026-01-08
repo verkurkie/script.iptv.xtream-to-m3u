@@ -32,7 +32,7 @@ def update_changelog(new_version, dry_run=False):
         commit_msg = subprocess.check_output(
             ["git", "log", "-1", "--pretty=%B"], text=True
         ).strip()
-    except:
+    except Exception:
         commit_msg = "Manual build/release"
 
     new_entry = f"v{new_version}\n- {commit_msg}\n\n"
