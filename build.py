@@ -34,16 +34,36 @@ def update_changelog(new_version, dry_run=False):
 
     # Get all commits since last tag
     try:
-        # Get the name of the last tag
-        last_tag = subprocess.check_output(
-            ["git", "describe", "--tags", "--abbrev=0"],
-            text=True,
-            stderr=subprocess.STDOUT,
-        ).strip()
+        # Check if current commit is already tagged (likely by PSR)
+        is_tagged = (
+            subprocess.run(
+                ["git", "describe", "--tags", "--exact-match", "HEAD"],
+                capture_output=True,
+            ).returncode
+            == 0
+        )
+
+        if is_tagged:
+            # current commit is the tag, find the one before it
+            last_tag = subprocess.check_output(
+                ["git", "describe", "--tags", "--abbrev=0", "HEAD^"],
+                text=True,
+                stderr=subprocess.STDOUT,
+            ).strip()
+        else:
+            # current commit is not tagged, find the most recent tag
+            last_tag = subprocess.check_output(
+                ["git", "describe", "--tags", "--abbrev=0"],
+                text=True,
+                stderr=subprocess.STDOUT,
+            ).strip()
+
         commit_range = f"{last_tag}..HEAD"
-    except subprocess.CalledProcessError:
+    except Exception:
         # No tags found, get all commits
         commit_range = "HEAD"
+
+    print(f"Collecting commits in range: {commit_range}")
 
     try:
         commits = subprocess.check_output(
