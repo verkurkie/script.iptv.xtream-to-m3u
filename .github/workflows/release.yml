@@ -33,7 +33,7 @@ jobs:
         run: |
           # Calculate version and update files
           # We use --no-vcs-release because we handle the GitHub Release manually with the ZIP
-          semantic-release --vcs-release false version
+          semantic-release version --no-vcs-release
           
           # Detect if a release was actually made
           if [ "$(git tag --points-at HEAD)" ]; then
