@@ -10,7 +10,6 @@ v1.0.3
 v1.0.2
 - chore: manual update to changelog.txt
 - fix: fix changelog updates to include all commit messages
-- chore: bump version to 1.0.1 [skip ci]
 
 v1.0.1
 - ci: update toml file to fix error in PSR

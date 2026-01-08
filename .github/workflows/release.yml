@@ -32,8 +32,9 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           # Calculate version and update files
-          # We use --no-vcs-release because we handle the GitHub Release manually with the ZIP
-          semantic-release version --no-vcs-release
+          # --no-vcs-release: GitHub Release is handled below
+          # --no-changelog: changelog.txt is handled by build.py
+          semantic-release version --no-vcs-release --no-changelog
           
           # Detect if a release was actually made
           if [ "$(git tag --points-at HEAD)" ]; then
