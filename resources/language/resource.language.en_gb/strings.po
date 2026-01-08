@@ -1,0 +1,145 @@
+# Kodi Xtream to M3U language file
+msgid ""
+msgstr ""
+"Project-Id-Version: script.iptv.xtream-to-m3u\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+# ----- 100 - General Settings
+msgctxt "#30100"
+msgid "General"
+msgstr "General"
+
+# ----- IPTV Provider Info
+msgctxt "#30110"
+msgid "IPTV Provider Info"
+msgstr "IPTV Provider Info"
+
+msgctxt "#30101"
+msgid "Host"
+msgstr "Host"
+
+msgctxt "#30102"
+msgid "Port"
+msgstr "Port"
+
+msgctxt "#30103"
+msgid "Username"
+msgstr "Username"
+
+msgctxt "#30104"
+msgid "Password"
+msgstr "Password"
+
+# ----- PVR Integration
+msgctxt "#30111"
+msgid "PVR Integration"
+msgstr "PVR Integration"
+
+msgctxt "#30105"
+msgid "Select PVR instance"
+msgstr "Select PVR instance"
+
+msgctxt "#30106"
+msgid "Selected PVR instance"
+msgstr "Selected PVR instance"
+
+msgctxt "#30107"
+msgid "M3U Filename"
+msgstr "M3U Filename"
+
+# ----- 200 - Categories
+msgctxt "#30200"
+msgid "Categories"
+msgstr "Categories"
+
+# ----- Manage Categories
+msgctxt "#30210"
+msgid "Manage Categories"
+msgstr "Manage Categories"
+
+msgctxt "#30201"
+msgid "Select Categories"
+msgstr "Select Categories"
+
+msgctxt "#30202"
+msgid "User Selected"
+msgstr "User Selected"
+
+# ----- 300 - Actions
+msgctxt "#30300"
+msgid "Actions"
+msgstr "Actions"
+
+# ----- System
+msgctxt "#30310"
+msgid "System"
+msgstr "System"
+
+msgctxt "#30301"
+msgid "Check Addon Status"
+msgstr "Check Addon Status"
+
+# ----- IPTV Simple Client
+msgctxt "#30311"
+msgid "IPTV Simple Client"
+msgstr "IPTV Simple Client"
+
+msgctxt "#30302"
+msgid "Check IPTV Simple Client"
+msgstr "Check IPTV Simple Client"
+
+msgctxt "#30303"
+msgid "Sync to IPTV Simple Client"
+msgstr "Sync to IPTV Simple Client"
+
+msgctxt "#30304"
+msgid "Refresh playlist"
+msgstr "Refresh playlist"
+
+# 500 - Help texts
+msgctxt "#30500"
+msgid "The host must start with http:// or https://"
+msgstr "The host must start with http:// or https://"
+
+msgctxt "#30501"
+msgid "Tip: search through the list with SHIFT + First Letter"
+msgstr "Tip: search through the list with SHIFT + First Letter"
+
+msgctxt "#30502"
+msgid "Will check if IPTV Simple Client (PVR) is installed"
+msgstr "Will check if IPTV Simple Client (PVR) is installed"
+
+msgctxt "#30503"
+msgid "Configures your PVR instance with playlist and EPG link"
+msgstr "Configures your PVR instance with playlist and EPG link"
+
+msgctxt "#30504"
+msgid "Rebuilds the playlist based on selected categories"
+msgstr "Rebuilds the playlist based on selected categories"
+
+msgctxt "#30505"
+msgid "Help text 505"
+msgstr "Help text 505"
+
+msgctxt "#30506"
+msgid "Help text 506"
+msgstr "Help text 506"
+
+msgctxt "#30507"
+msgid "Help text 507"
+msgstr "Help text 507"
+
+msgctxt "#30508"
+msgid "Help text 508"
+msgstr "Help text 508"
+
+msgctxt "#30509"
+msgid "Help text 509"
+msgstr "Help text 509"
+
+msgctxt "#30510"
+msgid "Help text 510"
+msgstr "Help text 510"
