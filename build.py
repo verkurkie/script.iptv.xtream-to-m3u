@@ -12,14 +12,19 @@ def get_addon_info():
 
 
 def update_addon_xml(new_version, dry_run=False):
-    print(f"Updating addon.xml to version {new_version}...")
+    tree = ET.parse("addon.xml")
+    root = tree.getroot()
+    current_version = root.get("version")
+
+    if current_version == new_version:
+        print(f"addon.xml already at version {new_version}, skipping update.")
+        return
+
+    print(f"Updating addon.xml from {current_version} to {new_version}...")
     if dry_run:
         print("[DRY-RUN] Would update addon.xml version.")
         return
 
-    # Use a simpler way to preserve formatting if possible, but ET is fine for now
-    tree = ET.parse("addon.xml")
-    root = tree.getroot()
     root.set("version", new_version)
     tree.write("addon.xml", encoding="UTF-8", xml_declaration=True)
 
@@ -27,15 +32,30 @@ def update_addon_xml(new_version, dry_run=False):
 def update_changelog(new_version, dry_run=False):
     print(f"Updating changelog.txt for version {new_version}...")
 
-    # Get latest commit message as a simple "change"
+    # Get all commits since last tag
     try:
-        commit_msg = subprocess.check_output(
-            ["git", "log", "-1", "--pretty=%B"], text=True
+        # Get the name of the last tag
+        last_tag = subprocess.check_output(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            text=True,
+            stderr=subprocess.STDOUT,
+        ).strip()
+        commit_range = f"{last_tag}..HEAD"
+    except subprocess.CalledProcessError:
+        # No tags found, get all commits
+        commit_range = "HEAD"
+
+    try:
+        commits = subprocess.check_output(
+            ["git", "log", commit_range, "--pretty=- %s"], text=True
         ).strip()
     except Exception:
-        commit_msg = "Manual build/release"
+        commits = "- Manual build/release"
 
-    new_entry = f"v{new_version}\n- {commit_msg}\n\n"
+    if not commits:
+        commits = "- No changes recorded"
+
+    new_entry = f"v{new_version}\n{commits}\n\n"
 
     if dry_run:
         print(f"[DRY-RUN] Would prepend to changelog.txt:\n{new_entry}")
@@ -46,8 +66,12 @@ def update_changelog(new_version, dry_run=False):
         with open("changelog.txt", "r") as f:
             content = f.read()
 
-    with open("changelog.txt", "w") as f:
-        f.write(new_entry + content)
+    # Ensure we don't duplicate the version if it's already there (e.g. from a failed run)
+    if not content.startswith(f"v{new_version}"):
+        with open("changelog.txt", "w") as f:
+            f.write(new_entry + content)
+    else:
+        print(f"Changelog already has entry for {new_version}, skipping write.")
 
 
 def build_zip(addon_id, version, dry_run=False):
