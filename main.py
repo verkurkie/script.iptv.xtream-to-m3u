@@ -7,11 +7,11 @@ import os
 import json
 from datetime import datetime
 
-from resources.lib.utils import log, system_check
-from resources.lib.m3u_utils import make_playlist
-from resources.lib.provider_utils import get_live_categories
-from resources.lib.pvr_utils import setup_pvr, sync_to_pvr, select_pvr_instance
-from resources.lib.xtream_utils import select_categories
+from resources.utils.common import log, system_check
+from resources.utils.m3u_utils import make_playlist
+from resources.utils.provider_utils import get_live_categories
+from resources.utils.pvr_utils import setup_pvr, sync_to_pvr, select_pvr_instance
+from resources.utils.xtream_utils import select_categories
 
 # Initialize the addon object
 ADDON = xbmcaddon.Addon()
