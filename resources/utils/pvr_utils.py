@@ -12,8 +12,7 @@ from .common import log, get_settings
 from .m3u_utils import make_playlist
 
 ADDON = xbmcaddon.Addon()
-# Using Home Window (10000) for cross-instance properties
-WINDOW = xbmcgui.Window(10000)
+WINDOW = xbmcgui.Window(10140)
 
 
 def setup_pvr():

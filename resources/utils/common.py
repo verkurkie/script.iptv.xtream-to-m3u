@@ -9,25 +9,57 @@ from datetime import datetime
 
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10000)
+WINDOW = xbmcgui.Window(10140)
 
 
 def log(message, level=xbmc.LOGINFO):
     xbmc.log(f"[script.iptv.xtream-to-m3u] {message}", level)
 
 
-def get_settings():
+def get_settings(skip_cache=False):
+    """
+    Returns settings.
+    By default, it checks window properties (Hot Cache) first to support
+    unsaved UI changes. Use skip_cache=True for a disk-only check.
+    """
+    props = [
+        "xtream_host",
+        "xtream_port",
+        "username",
+        "password",
+        "m3u_filename",
+        "user_categories_ids",
+    ]
+
+    data = {}
+    for p in props:
+        # Check disk
+        disk_val = ADDON.getSetting(p)
+        log(f"Disk value for {p}: {disk_val}")
+
+        if skip_cache:
+            data[p] = disk_val
+        else:
+            # Check for "hot" property in Home window
+            prop_name = f"script.iptv.xtream-to-m3u.{p}"
+            hot_val = WINDOW.getProperty(prop_name)
+            log(f"Hot value for {p}: {hot_val}")
+
+            # Use hot value if it exists, otherwise fallback to disk
+            data[p] = hot_val if hot_val != "" else disk_val
+
+    # Default overrides
+    if not data["m3u_filename"]:
+        data["m3u_filename"] = "xtream-to-m3u.m3u"
+
+    # Standardize dictionary keys to use the same logic as before
     return {
-        "host": ADDON.getSetting("xtream_host") or WINDOW.getProperty("xtream_host"),
-        "port": ADDON.getSetting("xtream_port") or WINDOW.getProperty("xtream_port"),
-        "username": ADDON.getSetting("username") or WINDOW.getProperty("username"),
-        "password": ADDON.getSetting("password") or WINDOW.getProperty("password"),
-        "m3u_filename": ADDON.getSetting("m3u_filename")
-        or WINDOW.getProperty("m3u_filename")
-        or "xtream.m3u",
-        "user_categories_ids": ADDON.getSetting("user_categories_ids")
-        or WINDOW.getProperty("user_categories_ids")
-        or "",
+        "host": data["xtream_host"],
+        "port": data["xtream_port"],
+        "username": data["username"],
+        "password": data["password"],
+        "m3u_filename": data["m3u_filename"],
+        "user_categories_ids": data["user_categories_ids"],
     }
 
 
@@ -59,6 +91,7 @@ def system_check():
         "pvr": "",
     }
 
+    # Use the unified settings pull (checks properties first to reflect unsaved UI changes)
     user_settings = get_settings()
     user_categories_ids = user_settings["user_categories_ids"] or None
     # Strip whitespace and split
@@ -74,6 +107,7 @@ def system_check():
     system_checks["user_categories_ids"] = {
         "status": "ok" if user_category_count > 0 else "error",
         "count": user_category_count,
+        "ids": user_category_list,
         "last_modified": None,
     }
 
@@ -278,7 +312,7 @@ def system_check():
     add_line(
         "User Categories",
         uc_info,
-        f"{uc_info['count']} selected",
+        f"{uc_info['ids']}",
     )
 
     lc = system_checks.get("live_categories", {})

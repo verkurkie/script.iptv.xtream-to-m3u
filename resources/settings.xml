@@ -29,19 +29,17 @@
                     <data>RunScript(script.iptv.xtream-to-m3u, "action=select_pvr_instance")</data>
                     <control type="button" format="action" />
                 </setting>
-                <setting id="pvr_instance_name" type="string" label="30106">
+                <setting id="pvr_instance_name" type="string" label="30106" default="">
                     <enable>false</enable>
                     <level>0</level>
-                    <default></default>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="pvr_instance_id" type="string">
+                <setting id="pvr_instance_id" type="string" default="">
                     <visible>false</visible>
                     <level>0</level>
-                    <default></default>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
@@ -52,11 +50,13 @@
                     <data>RunScript(script.iptv.xtream-to-m3u, "action=select_categories")</data>
                     <control type="button" format="action" />
                 </setting>
-                <setting id="user_categories_ids" type="string">
+                <setting id="user_categories_ids" type="string" label="30107" default="">
                     <visible>false</visible>
                     <enable>false</enable>
                     <level>0</level>
-                    <default></default>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
                     <control type="edit" format="string" />
                 </setting>
                 <setting id="m3u_filename" type="string" label="30108">

@@ -11,7 +11,7 @@ from .provider_utils import get_live_categories
 from .pvr_utils import refresh_pvr
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10000)
+WINDOW = xbmcgui.Window(10140)
 
 
 def select_categories():
@@ -26,7 +26,9 @@ def select_categories():
 
         # Get categories - fetch from provider if needed
         if not xbmcvfs.exists(input_path):
-            xbmcgui.Dialog().ok("Xtream to M3U", "Fetching categories from provider...")
+            xbmcgui.Dialog().notification(
+                "Xtream to M3U", "Fetching categories from provider..."
+            )
             categories = get_live_categories()
         else:
             with xbmcvfs.File(input_path, "r") as f:
@@ -116,7 +118,9 @@ def select_categories():
 
         # Update Settings (For summary and backup)
         ADDON.setSetting("user_categories_ids", ",".join(final_ids))
-        WINDOW.setProperty("user_categories_ids", ",".join(final_ids))
+        WINDOW.setProperty(
+            "script.iptv.xtream-to-m3u.user_categories_ids", ",".join(final_ids)
+        )
 
         # Update the playlist with the selected IDs (only if the selection changed)
         if final_ids != current_selected:

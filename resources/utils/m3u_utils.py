@@ -12,7 +12,7 @@ from .common import log
 from .provider_utils import get_live_categories, get_live_streams
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10000)
+WINDOW = xbmcgui.Window(10140)
 
 
 class M3uItem:
@@ -95,7 +95,7 @@ def make_playlist(final_ids=None):
     user_categories_ids = (
         ",".join(map(str, final_ids))
         if final_ids
-        else WINDOW.getProperty("user_categories_ids")
+        else WINDOW.getProperty("script.iptv.xtream-to-m3u.user_categories_ids")
         or ADDON.getSetting("user_categories_ids")
     )
     live_streams = (

@@ -116,7 +116,15 @@ def build_zip(addon_id, version, dry_run=False):
     zip_name = f"{addon_id}-{version}.zip"
 
     # Files and directories to include as per RELEASE.md
-    includes = ["addon.xml", "main.py", "resources", "changelog.txt", "README.md"]
+    includes = [
+        "addon.xml",
+        "main.py",
+        "fanart.jpg",
+        "icon.png",
+        "resources",
+        "changelog.txt",
+        "README.md",
+    ]
 
     print(f"Building {zip_name}...")
     if dry_run:
