@@ -66,6 +66,22 @@
                 </setting>
             </group>
         </category>
+        <category id="cat_filters" label="30200">
+            <group id="1" label="30210">
+                <setting id="exclude_prefixes" type="string" label="30201" default="" help="30507">
+                    <level>0</level>
+                    <constraints>
+                        <allowempty>true</allowempty>
+                    </constraints>
+                    <control type="edit" format="string" />
+                </setting>
+                <setting id="strip_prefixes" type="boolean" label="30202" help="30508">
+                    <level>0</level>
+                    <default>false</default>
+                    <control type="toggle" />
+                </setting>
+            </group>
+        </category>
         <category id="cat_actions" label="30300">
             <group id="1" label="30310">
                 <setting id="system_checks" type="action" label="30301">

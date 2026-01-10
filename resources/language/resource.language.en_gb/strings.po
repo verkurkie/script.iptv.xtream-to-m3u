@@ -67,6 +67,26 @@ msgid "M3U Filename"
 msgstr "M3U Filename"
 
 # ===================================================================
+# ----- 200 - Filters
+# ===================================================================
+msgctxt "#30200"
+msgid "Filters"
+msgstr "Filters"
+
+# ----- Channel filters
+msgctxt "#30210"
+msgid "Channel filters"
+msgstr "Channel filters"
+
+msgctxt "#30201"
+msgid "Exclude channels starting with"
+msgstr "Exclude channels starting with"
+
+msgctxt "#30202"
+msgid "Strip country prefixes from channel names"
+msgstr "Strip country prefixes from channel names"
+
+# ===================================================================
 # ----- 300 - Actions
 # ===================================================================
 msgctxt "#30300"
@@ -144,12 +164,12 @@ msgid "[Debug] this is the test action (dev)"
 msgstr "[Debug] this is the test action (dev)"
 
 msgctxt "#30507"
-msgid "Help text 507"
-msgstr "Help text 507"
+msgid "Exclude channels that start with any of the strings entered (supports multiple strings, separated by comma)"
+msgstr "Exclude channels that start with any of the strings entered (supports multiple strings, separated by comma)"
 
 msgctxt "#30508"
-msgid "Help text 508"
-msgstr "Help text 508"
+msgid "If set to true, will strip country prefixes (like "US | " or "UK | ") from channel names"
+msgstr "If set to true, will strip country prefixes (like "US | " or "UK | ") from channel names"
 
 msgctxt "#30509"
 msgid "Help text 509"

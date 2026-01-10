@@ -159,6 +159,7 @@ def select_pvr_instance():
 
 def sync_to_pvr():
     """Updates the targeted PVR instance XML with M3U and EPG details."""
+    xbmcgui.Dialog().notification("Xtream to M3U", "Syncing to PVR...")
     try:
         make_playlist()
         pvr_instance_id, pvr_instance_name, xml_content = get_pvr_instance_info()

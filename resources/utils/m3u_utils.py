@@ -92,12 +92,14 @@ def make_playlist(final_ids=None):
         if xbmcvfs.exists(live_categories_path)
         else get_live_categories()
     )
+
     user_categories_ids = (
         ",".join(map(str, final_ids))
         if final_ids
         else WINDOW.getProperty("script.iptv.xtream-to-m3u.user_categories_ids")
         or ADDON.getSetting("user_categories_ids")
     )
+
     live_streams = (
         json.load(xbmcvfs.File(live_streams_path))
         if xbmcvfs.exists(live_streams_path)
@@ -108,6 +110,8 @@ def make_playlist(final_ids=None):
     iptv_port = ADDON.getSetting("xtream_port")
     username = ADDON.getSetting("username")
     password = ADDON.getSetting("password")
+    exclude_prefixes = ADDON.getSetting("exclude_prefixes")
+    strip_prefixes = ADDON.getSetting("strip_prefixes")
 
     category_map = {
         str(c.get("category_id")): c.get("category_name") for c in live_categories
@@ -127,6 +131,11 @@ def make_playlist(final_ids=None):
         return
 
     m3u_entries = []
+
+    # Filter out any channels that match any of the exclude regexes
+    exclude_prefixes = exclude_prefixes.split(",")
+    exclude_prefixes.append("✦●✦●")
+
     for channel in live_streams:
         # Ensure category_id is a string and handle potential 'null' values from API
         category_id = str(channel.get("category_id") or "")
@@ -135,8 +144,15 @@ def make_playlist(final_ids=None):
         if selected_id_set and category_id not in selected_id_set:
             continue
 
-        # Get the channel name and URL
+        # Get the channel name and URL - strip the prefix if needed (do this BEFORE the exclude check!)
         tvg_name = channel.get("name", "")
+        if strip_prefixes and " | " in tvg_name:
+            tvg_name = tvg_name.split(" | ", 1)[1]
+
+        # Skip channel if it starts with any of the exclude prefixes
+        if strip_prefixes and tvg_name.startswith(tuple(exclude_prefixes)):
+            continue
+
         stream_icon = channel.get("stream_icon", "")
         epg_channel_id = channel.get("epg_channel_id", "")
 
