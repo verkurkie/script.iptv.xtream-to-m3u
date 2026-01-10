@@ -1,3 +1,6 @@
+v1.0.6
+- refactor: streamlining code and reduce clutter
+
 v1.0.5
 - ci: add conventional prefixes to trigger releases
 - refactor: revert changes related to weblate and set language to default en_gb
