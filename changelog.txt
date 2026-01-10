@@ -1,3 +1,6 @@
+v1.0.7
+- fix: various issues observed on other installations of Kodi
+
 v1.0.6
 - refactor: streamlining code and reduce clutter
 
