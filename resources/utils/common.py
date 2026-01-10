@@ -9,6 +9,7 @@ from datetime import datetime
 
 
 ADDON = xbmcaddon.Addon()
+WINDOW = xbmcgui.Window(10000)
 
 
 def log(message, level=xbmc.LOGINFO):
@@ -17,11 +18,16 @@ def log(message, level=xbmc.LOGINFO):
 
 def get_settings():
     return {
-        "host": ADDON.getSetting("xtream_host"),
-        "port": ADDON.getSetting("xtream_port"),
-        "username": ADDON.getSetting("username"),
-        "password": ADDON.getSetting("password"),
-        "m3u_filename": ADDON.getSetting("m3u_filename") or "xtream.m3u",
+        "host": ADDON.getSetting("xtream_host") or WINDOW.getProperty("xtream_host"),
+        "port": ADDON.getSetting("xtream_port") or WINDOW.getProperty("xtream_port"),
+        "username": ADDON.getSetting("username") or WINDOW.getProperty("username"),
+        "password": ADDON.getSetting("password") or WINDOW.getProperty("password"),
+        "m3u_filename": ADDON.getSetting("m3u_filename")
+        or WINDOW.getProperty("m3u_filename")
+        or "xtream.m3u",
+        "user_categories_ids": ADDON.getSetting("user_categories_ids")
+        or WINDOW.getProperty("user_categories_ids")
+        or "",
     }
 
 
@@ -46,10 +52,29 @@ def system_check():
     system_checks = {
         "last_checked": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "provider": "",
+        "user_categories_ids": "",
         "live_categories": "",
         "live_streams": "",
         "playlist": "",
         "pvr": "",
+    }
+
+    user_settings = get_settings()
+    user_categories_ids = user_settings["user_categories_ids"] or None
+    # Strip whitespace and split
+    raw_ids = user_categories_ids.strip() if user_categories_ids else ""
+    # Filter out empty strings from the list
+    user_category_list = [i for i in raw_ids.split(",") if i]
+
+    user_category_count = len(user_category_list)
+
+    log(f"user categories: {user_categories_ids}")
+    log(f"user category count: {user_category_count}")
+
+    system_checks["user_categories_ids"] = {
+        "status": "ok" if user_category_count > 0 else "error",
+        "count": user_category_count,
+        "last_modified": None,
     }
 
     api_url = get_api_url()
@@ -248,6 +273,13 @@ def system_check():
     # Sections
     p_info = system_checks.get("provider", {})
     add_line("Provider", p_info, f"Exp: {p_info.get('expiry', 'N/A')}")
+
+    uc_info = system_checks.get("user_categories_ids", {})
+    add_line(
+        "User Categories",
+        uc_info,
+        f"{uc_info['count']} selected",
+    )
 
     lc = system_checks.get("live_categories", {})
     if lc.get("count") is not None:

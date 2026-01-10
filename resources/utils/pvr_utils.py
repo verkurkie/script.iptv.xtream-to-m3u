@@ -5,11 +5,15 @@ import xbmcaddon
 import xbmcgui
 import xbmcvfs
 import json
+import sqlite3
+import glob
 
 from .common import log, get_settings
+from .m3u_utils import make_playlist
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window()
+# Using Home Window (10000) for cross-instance properties
+WINDOW = xbmcgui.Window(10000)
 
 
 def setup_pvr():
@@ -28,7 +32,6 @@ def setup_pvr():
             log("pvr.iptvsimple not found. Requesting installation...")
             # InstallAddon builtin will prompt user to install
             xbmc.executebuiltin(f"InstallAddon({addon_id})")
-            ADDON.setSetting("pvr_status", "Installation Requested")
             return
 
         # Check if it's enabled via JSON-RPC (and get version)
@@ -63,14 +66,12 @@ def setup_pvr():
             xbmc.executeJSONRPC(json.dumps(rpc_enable))
 
         log(f"pvr.iptvsimple v.{pvr_version} is installed and enabled.")
-        ADDON.setSetting("pvr_status", f"Ready (v.{pvr_version})")
-        WINDOW.setProperty(
-            "script.iptv.xtream-to-m3u.pvr_status", f"Ready (v.{pvr_version})"
+        xbmcgui.Dialog().ok(
+            "Xtream to M3U", f"pvr.iptvsimple v.{pvr_version} is installed and enabled!"
         )
 
     except Exception as e:
         log(f"Error in setup_pvr: {str(e)}", xbmc.LOGERROR)
-        ADDON.setSetting("pvr_status", f"Error: {str(e)}")
 
 
 def get_pvr_instances():
@@ -116,6 +117,7 @@ def get_pvr_instances():
 
 def select_pvr_instance():
     """Shows a dialog to select which PVR instance to target."""
+    current_instance_id = ADDON.getSetting("pvr_instance_id")
     instances = get_pvr_instances()
 
     options = [f"{i['name']} (ID: {i['id']})" for i in instances]
@@ -139,6 +141,8 @@ def select_pvr_instance():
     # Update UI (lazy save) and shared memory (instant)
     ADDON.setSetting("pvr_instance_id", str(selected["id"]))
     ADDON.setSetting("pvr_instance_name", str(selected["name"]))
+
+    # Set properties to the window so they can be used BEFORE the user saves the settings!
     WINDOW.setProperty("script.iptv.xtream-to-m3u.pvr_instance_id", str(selected["id"]))
     WINDOW.setProperty(
         "script.iptv.xtream-to-m3u.pvr_instance_name", str(selected["name"])
@@ -146,22 +150,22 @@ def select_pvr_instance():
 
     log(f"Instance selected: {selected['name']} (ID: {selected['id']})")
 
+    current_playlist_path = ADDON.getSetting("playlist_path")
+    has_playlist = xbmcvfs.exists(current_playlist_path)
+
+    if has_playlist and selected["id"] != current_instance_id:
+        # Sync playlist and EPG to the new instance but only if the instance is different and there is an existing playlist!
+        sync_to_pvr()
+
 
 def sync_to_pvr():
     """Updates the targeted PVR instance XML with M3U and EPG details."""
     try:
-        # Get target ID (check memory property first, then fallback to disk)
-        instance_id = WINDOW.getProperty(
-            "script.iptv.xtream-to-m3u.pvr_instance_id"
-        ) or ADDON.getSetting("pvr_instance_id")
-        instance_name = WINDOW.getProperty(
-            "script.iptv.xtream-to-m3u.pvr_instance_name"
-        ) or ADDON.getSetting("pvr_instance_name")
+        make_playlist()
+        pvr_instance_id, pvr_instance_name, xml_content = get_pvr_instance_info()
 
-        if not instance_id:
-            xbmcgui.Dialog().ok(
-                "Xtream to M3U", "Please select a target configuration first."
-            )
+        if not xml_content:
+            xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
             return
 
         settings = get_settings()
@@ -170,31 +174,20 @@ def sync_to_pvr():
         port = settings["port"]
         user = settings["username"]
         password = settings["password"]
+        user_categories_ids = settings["user_categories_ids"]
 
-        # Determine XML path
-        pvr_data_path = xbmcvfs.translatePath(
-            "special://profile/addon_data/pvr.iptvsimple/"
-        )
-        if instance_id == "0":
-            xml_path = os.path.join(pvr_data_path, "settings.xml")
-        else:
-            xml_path = os.path.join(
-                pvr_data_path, f"instance-settings-{instance_id}.xml"
-            )
-
-        if not xbmcvfs.exists(xml_path):
+        if not user_categories_ids or user_categories_ids.strip() == "":
             xbmcgui.Dialog().ok(
-                "Xtream to M3U", f"PVR Config file not found:\n{xml_path}"
+                "Xtream to M3U",
+                "No categories selected.\nPlease select at least one category first.",
             )
+            log("sync_to_pvr: No categories selected. Aborting.")
             return
 
         # Prepare values
         m3u_url = f"special://home/userdata/playlists/{m3u_filename}"
-        epg_url = f"{host}:{port}/xmltv.php?username={user}&password={password}"
-
-        # Read and update XML
-        with xbmcvfs.File(xml_path, "r") as f:
-            xml_content = f.read()
+        # Build the EPG URL with the username and password and limit the data to the user's selected categories
+        epg_url = f"{host}:{port}/xmltv.php?username={user}&password={password}&categories={user_categories_ids}"
 
         # Helper to replace or add settings (handles default="true" attributes and self-closing tags)
         def update_xml_setting(content, setting_id, value):
@@ -234,13 +227,155 @@ def sync_to_pvr():
         )  # Disable cache to ensure fresh loads
         xml_content = update_xml_setting(xml_content, "epgCache", "false")
 
-        with xbmcvfs.File(xml_path, "w") as f:
-            f.write(xml_content)
+        set_pvr_instance_xml(pvr_instance_id, xml_content)
 
-        log(f"Successfully synced settings to PVR instance {instance_id}")
+        # Trigger PVR reload
+        refresh_pvr(silent=True)
 
-        # Trigger PVR update: Toggle the addon to force a re-read of the modified settings.xml
+        xbmcgui.Dialog().ok(
+            "Xtream to M3U",
+            f"Configuration synced successfully to:\n{pvr_instance_name}\n\nPVR reload triggered.",
+        )
+
+    except Exception as e:
+        log(f"Error in sync_to_pvr: {str(e)}", xbmc.LOGERROR)
+        xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
+
+
+def get_pvr_instance_info(pvr_instance_id=None):
+    # Get target ID (check memory property first, then fallback to disk)
+    pvr_instance_id = (
+        pvr_instance_id
+        or WINDOW.getProperty("script.iptv.xtream-to-m3u.pvr_instance_id")
+        or ADDON.getSetting("pvr_instance_id")
+    )
+
+    if not pvr_instance_id:
+        log(
+            "Cannot determine PVR instance ID: No PVR Instance ID provided/configured.",
+            xbmc.LOGERROR,
+        )
+        return None, None, None
+
+    pvr_instance_name = WINDOW.getProperty(
+        "script.iptv.xtream-to-m3u.pvr_instance_name"
+    ) or ADDON.getSetting("pvr_instance_name")
+
+    # Determine XML path
+    pvr_data_path = xbmcvfs.translatePath(
+        "special://profile/addon_data/pvr.iptvsimple/"
+    )
+
+    if pvr_instance_id == "0":
+        xml_path = os.path.join(pvr_data_path, "settings.xml")
+    else:
+        xml_path = os.path.join(
+            pvr_data_path, f"instance-settings-{pvr_instance_id}.xml"
+        )
+
+    if not xbmcvfs.exists(xml_path):
+        log(f"PVR Config file not found:\n{xml_path}", xbmc.LOGERROR)
+        return None, None, None
+
+    with xbmcvfs.File(xml_path, "r") as f:
+        xml_content = f.read()
+
+    # Return tuple of (instance_id, pvr_instance_name)
+    return pvr_instance_id, pvr_instance_name, xml_content
+
+
+def set_pvr_instance_xml(pvr_instance_id=None, xml_content=None):
+    if xml_content is None:
+        return
+
+    pvr_instance_id, pvr_instance_name, _ = get_pvr_instance_info(pvr_instance_id)
+
+    if not pvr_instance_id:
+        return
+
+    # Determine XML path
+    pvr_data_path = xbmcvfs.translatePath(
+        "special://profile/addon_data/pvr.iptvsimple/"
+    )
+    if pvr_instance_id == "0":
+        xml_path = os.path.join(pvr_data_path, "settings.xml")
+    else:
+        xml_path = os.path.join(
+            pvr_data_path, f"instance-settings-{pvr_instance_id}.xml"
+        )
+
+    if not xbmcvfs.exists(xml_path):
+        log(f"PVR Config file not found:\n{xml_path}", xbmc.LOGERROR)
+        return
+
+    with xbmcvfs.File(xml_path, "w") as f:
+        f.write(xml_content)
+
+
+def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
+    """
+    Clears channel groups for a specific PVR instance to force a structural reload and
+    forces pvr.iptvsimple to reload by toggling it off and on.
+    """
+    pvr_instance_id, pvr_instance_name, _ = get_pvr_instance_info(pvr_instance_id)
+
+    if not pvr_instance_id:
+        return False
+
+    # Use passed categories or fallback to settings/properties
+    user_categories_ids = categories
+    if not user_categories_ids:
+        settings = get_settings()
+        user_categories_ids = settings["user_categories_ids"]
+
+    if not user_categories_ids or user_categories_ids.strip() == "":
+        if not silent:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "No categories selected.\nPlease select at least one category first.",
+            )
+        log("refresh_pvr: No categories selected. Aborting.")
+        return False
+
+    # Database manipulation - removing the channel-groups will cause the PVR toggle (below) to re-process the M3U file
+    db_name = "TV*.db"
+    path_db = "special://profile/Database/%s" % db_name
+    try:
+        filelist = sorted(glob.glob(xbmcvfs.translatePath(path_db)))
+    except AttributeError:
+        sorted(glob(xbmcvfs.translatePath(path_db)))
+
+    if filelist:
+        path = filelist[-1]
+    else:
+        log("Refresh PVR failed: TV database (TV*.db) not found.", xbmc.LOGERROR)
+        return
+
+    log(f"Refreshing PVR (Client ID: {pvr_instance_id}) in {path}...")
+
+    try:
+        # Use context manager to ensure connection is closed properly
+        with sqlite3.connect(path) as conn:
+            cursor = conn.cursor()
+            # Use parameterized query (?) for safety
+            cursor.execute(
+                "DELETE FROM channelgroups WHERE iClientId = ?", (pvr_instance_id,)
+            )
+            log(f"Database Reset: Deleted {cursor.rowcount} groups.")
+            conn.commit()
+
+    except Exception as e:
+        log(f"Error during PVR group reset: {str(e)}", xbmc.LOGERROR)
+
+    toggle_pvr(silent)
+    return True
+
+
+def toggle_pvr(silent=None):
+    # Toggle PVR to force settings reload after DB manipulation
+    try:
         log("Toggling pvr.iptvsimple to force settings reload...")
+        # Disable
         xbmc.executeJSONRPC(
             json.dumps(
                 {
@@ -251,8 +386,11 @@ def sync_to_pvr():
                 }
             )
         )
-        # Sleep for a moment to ensure the addon is disabled
+
+        # Small sleep to allow Kodi to process the disable command
         xbmc.sleep(1000)
+
+        # Enable
         xbmc.executeJSONRPC(
             json.dumps(
                 {
@@ -264,17 +402,15 @@ def sync_to_pvr():
             )
         )
 
-        # Give Kodi a moment to restart the PVR manager, then trigger a refresh
+        # Small sleep then trigger the PVR manager update
+        xbmc.sleep(1000)
+
         xbmc.executebuiltin("PVR.TriggerUpdate")
 
-        status_msg = f"Synced to {instance_name}"
-        ADDON.setSetting("pvr_status", status_msg)
-        WINDOW.setProperty("script.iptv.xtream-to-m3u.pvr_status", status_msg)
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U",
-            f"Configuration synced successfully to:\n{instance_name}\n\nPVR reload triggered.",
-        )
+        if not silent:
+            xbmcgui.Dialog().notification(
+                "Xtream to M3U", "PVR Reloaded", xbmcgui.NOTIFICATION_INFO, 2000
+            )
 
     except Exception as e:
-        log(f"Error in sync_to_pvr: {str(e)}", xbmc.LOGERROR)
-        xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
+        log(f"Error refreshing PVR: {str(e)}", xbmc.LOGERROR)

@@ -8,11 +8,14 @@ import xbmcaddon
 from .common import log
 from .m3u_utils import make_playlist
 from .provider_utils import get_live_categories
+from .pvr_utils import refresh_pvr
 
 ADDON = xbmcaddon.Addon()
+WINDOW = xbmcgui.Window(10000)
 
 
 def select_categories():
+    log("select_categories: Starting category selection process.")
     try:
         profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
         if not xbmcvfs.exists(profile_path):
@@ -92,6 +95,14 @@ def select_categories():
             cat_id = str(categories[idx].get("category_id"))
             final_ids.append(cat_id)
 
+        if len(final_ids) == 0:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "Requirement: You must select at least one category! Changes were not saved.",
+            )
+            log("select_categories: Empty selection blocked.")
+            return
+
         # 4. Save Results
         # Save to JSON (for persistent storage)
         try:
@@ -104,27 +115,19 @@ def select_categories():
             log(f"Failed to save selected_categories.json: {str(e)}")
 
         # Update Settings (For summary and backup)
-        if not final_ids:
-            ADDON.setSetting("user_categories_ids", "All")
-            summary = "All Categories"
-            log("select_categories: No IDs selected, resetting to All Categories")
-        else:
-            ADDON.setSetting("user_categories_ids", ",".join(final_ids))
-            id_to_name = {str(c["category_id"]): c["category_name"] for c in categories}
-            selected_names = [id_to_name.get(cid, "Unknown") for cid in final_ids]
-
-            if len(selected_names) <= 3:
-                summary = ", ".join(selected_names)
-            else:
-                summary = f"{len(selected_names)} Categories"
-
-        # Force update the summary setting
-        ADDON.setSetting("user_categories", summary)
-        log(f"Settings Summary forced to: {summary}")
+        ADDON.setSetting("user_categories_ids", ",".join(final_ids))
+        WINDOW.setProperty("user_categories_ids", ",".join(final_ids))
 
         # Update the playlist with the selected IDs (only if the selection changed)
         if final_ids != current_selected:
+            xbmcgui.Dialog().notification("Xtream to M3U", "Updating playlist...")
             make_playlist(final_ids)
+            # Pass final_ids to refresh_pvr to ensure it uses the latest selection!
+            if refresh_pvr(silent=True, categories=",".join(final_ids)):
+                xbmcgui.Dialog().ok(
+                    "Xtream to M3U",
+                    f"Successfully updated to [{len(final_ids)}] categories\n\nPVR reload triggered.",
+                )
 
         return final_ids, True  # Return success tuple matching old signature
 

@@ -7,7 +7,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+# ===================================================================
 # ----- 100 - General Settings
+# ===================================================================
 msgctxt "#30100"
 msgid "General"
 msgstr "General"
@@ -46,29 +48,27 @@ msgctxt "#30106"
 msgid "Selected PVR instance"
 msgstr "Selected PVR instance"
 
-msgctxt "#30107"
-msgid "M3U Filename"
-msgstr "M3U Filename"
-
-# ----- 200 - Categories
-msgctxt "#30200"
-msgid "Categories"
-msgstr "Categories"
-
 # ----- Manage Categories
-msgctxt "#30210"
+msgctxt "#30112"
 msgid "Manage Categories"
 msgstr "Manage Categories"
 
-msgctxt "#30201"
+msgctxt "#30107"
 msgid "Select Categories"
 msgstr "Select Categories"
 
-msgctxt "#30202"
-msgid "User Selected"
-msgstr "User Selected"
+# ----- M3U File Info
+msgctxt "#30113"
+msgid "M3U File Info"
+msgstr "M3U File Info"
 
+msgctxt "#30108"
+msgid "M3U Filename"
+msgstr "M3U Filename"
+
+# ===================================================================
 # ----- 300 - Actions
+# ===================================================================
 msgctxt "#30300"
 msgid "Actions"
 msgstr "Actions"
@@ -91,15 +91,30 @@ msgctxt "#30302"
 msgid "Check IPTV Simple Client"
 msgstr "Check IPTV Simple Client"
 
-msgctxt "#30303"
-msgid "Sync to IPTV Simple Client"
-msgstr "Sync to IPTV Simple Client"
+msgctxt "#30305"
+msgid "Reset PVR"
+msgstr "Reset PVR"
 
 msgctxt "#30304"
-msgid "Refresh playlist"
-msgstr "Refresh playlist"
+msgid "Rebuild M3U playlist and sync PVR"
+msgstr "Rebuild M3U playlist and sync PVR"
 
+msgctxt "#30303"
+msgid "Sync playlist to IPTV Simple Client"
+msgstr "Sync playlist to IPTV Simple Client"
+
+# ----- Test actions
+msgctxt "#30313"
+msgid "Test actions"
+msgstr "Test actions"
+
+msgctxt "#30306"
+msgid "Test action"
+msgstr "Test action"
+
+# ===================================================================
 # 500 - Help texts
+# ===================================================================
 msgctxt "#30500"
 msgid "The host must start with http:// or https://"
 msgstr "The host must start with http:// or https://"
@@ -117,16 +132,16 @@ msgid "Configures your PVR instance with playlist and EPG link"
 msgstr "Configures your PVR instance with playlist and EPG link"
 
 msgctxt "#30504"
-msgid "Rebuilds the playlist based on selected categories"
-msgstr "Rebuilds the playlist based on selected categories"
+msgid "Rebuilds the playlist based on selected categories and sync to PVR"
+msgstr "Rebuilds the playlist based on selected categories and sync to PVR"
 
 msgctxt "#30505"
-msgid "Help text 505"
-msgstr "Help text 505"
+msgid "Resets the DB groups for the selected PVR instance (refreshes the PVR)"
+msgstr "Resets the DB groups for the selected PVR instance (refreshes the PVR)"
 
 msgctxt "#30506"
-msgid "Help text 506"
-msgstr "Help text 506"
+msgid "[Debug] this is the test action (dev)"
+msgstr "[Debug] this is the test action (dev)"
 
 msgctxt "#30507"
 msgid "Help text 507"
