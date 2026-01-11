@@ -12,6 +12,32 @@ from .common import log, get_api_url, set_setting
 ADDON = xbmcaddon.Addon()
 
 
+def test_provider(dialog=False):
+    api_url = get_api_url()
+    if not api_url:
+        return False
+
+    try:
+        req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=30) as response:
+            data = response.read().decode("utf-8", errors="ignore")
+    except urllib.error.URLError as e:
+        log(f"Failed to test server: {str(e)}", xbmc.LOGERROR)
+        return {"status": "error", "expiry": "0", "user_info": {}}
+    except Exception as e:
+        log(f"Unexpected error: {str(e)}", xbmc.LOGERROR)
+        return {"status": "error", "expiry": "0", "user_info": {}}
+
+    if dialog:
+        xbmcgui.Dialog().textviewer(
+            heading="IPTV Provider info",
+            text=json.dumps(json.loads(data), indent=2),
+            usemono=True,
+        )
+
+    return json.loads(data)
+
+
 def get_live_categories():
     api_url = get_api_url()
     if not api_url:
@@ -42,12 +68,6 @@ def get_live_categories():
             f.write(json.dumps(categories, indent=2))
 
         log(f"Live categories saved to: {output_path}")
-
-        # Update the setting in the UI
-        set_setting(
-            "category_status",
-            f"[{item_count}] Categories ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})",
-        )
 
         return categories
 

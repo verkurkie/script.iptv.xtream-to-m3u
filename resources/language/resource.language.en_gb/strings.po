@@ -14,8 +14,25 @@ msgctxt "#30100"
 msgid "General"
 msgstr "General"
 
-# ----- IPTV Provider Info
+# ----- PVR Integration
 msgctxt "#30110"
+msgid "PVR Integration"
+msgstr "PVR Integration"
+
+msgctxt "#30105"
+msgid "Select PVR instance"
+msgstr "Select PVR instance"
+
+msgctxt "#30106"
+msgid "Selected PVR instance"
+msgstr "Selected PVR instance"
+
+msgctxt "#30108"
+msgid "M3U playlist Path"
+msgstr "M3U playlist Path"
+
+# ----- IPTV Provider Info
+msgctxt "#30111"
 msgid "IPTV Provider Info"
 msgstr "IPTV Provider Info"
 
@@ -35,54 +52,40 @@ msgctxt "#30104"
 msgid "Password"
 msgstr "Password"
 
-# ----- PVR Integration
-msgctxt "#30111"
-msgid "PVR Integration"
-msgstr "PVR Integration"
+msgctxt "#30109"
+msgid "Test IPTV Provider"
+msgstr "Test IPTV Provider"
 
-msgctxt "#30105"
-msgid "Select PVR instance"
-msgstr "Select PVR instance"
-
-msgctxt "#30106"
-msgid "Selected PVR instance"
-msgstr "Selected PVR instance"
+# ===================================================================
+# ----- 200 - Categories & Channels
+# ===================================================================
+msgctxt "#30200"
+msgid "Categories & Channels"
+msgstr "Categories & Channels"
 
 # ----- Manage Categories
-msgctxt "#30112"
+msgctxt "#30210"
 msgid "Manage Categories"
 msgstr "Manage Categories"
 
-msgctxt "#30107"
+msgctxt "#30201"
 msgid "Select Categories"
 msgstr "Select Categories"
 
-# ----- M3U File Info
-msgctxt "#30113"
-msgid "M3U File Info"
-msgstr "M3U File Info"
-
-msgctxt "#30108"
-msgid "M3U playlist Path"
-msgstr "M3U playlist Path"
-
-# ===================================================================
-# ----- 200 - Filters
-# ===================================================================
-msgctxt "#30200"
-msgid "Filters"
-msgstr "Filters"
+msgctxt "#30202"
+msgid "Current selection"
+msgstr "Current selection"
 
 # ----- Channel filters
-msgctxt "#30210"
+msgctxt "#30211"
 msgid "Channel filters"
 msgstr "Channel filters"
 
-msgctxt "#30201"
+msgctxt "#30203"
 msgid "Exclude channels starting with"
 msgstr "Exclude channels starting with"
 
-msgctxt "#30202"
+msgctxt "#30204"
 msgid "Strip country prefixes from channel names"
 msgstr "Strip country prefixes from channel names"
 
@@ -102,8 +105,21 @@ msgctxt "#30301"
 msgid "Check Addon Status"
 msgstr "Check Addon Status"
 
-# ----- IPTV Simple Client
+# ----- IPTV Provider
 msgctxt "#30311"
+msgid "IPTV Provider"
+msgstr "IPTV Provider"
+
+msgctxt "#30308"
+msgid "Update IPTV Categories and channels"
+msgstr "Update IPTV Categories and channels"
+
+msgctxt "#30306"
+msgid "Make playlist (no sync)"
+msgstr "Make playlist (no sync)"
+
+# ----- IPTV Simple Client
+msgctxt "#30312"
 msgid "IPTV Simple Client"
 msgstr "IPTV Simple Client"
 
@@ -122,10 +138,6 @@ msgstr "Rebuild M3U playlist and sync PVR"
 msgctxt "#30305"
 msgid "Reset PVR"
 msgstr "Reset PVR"
-
-msgctxt "#30306"
-msgid "Make playlist (no sync)"
-msgstr "Make playlist (no sync)"
 
 # ----- Test actions
 msgctxt "#30313"
@@ -180,5 +192,9 @@ msgid "The path to the M3U playlist file (file will be named after the PVR insta
 msgstr "The path to the M3U playlist file (file will be named after the PVR instance name)"
 
 msgctxt "#30510"
-msgid "Help text 510"
-msgstr "Help text 510"
+msgid "Fetches Channel Categories and Channels from the IPTV Provider"
+msgstr "Fetches Channel Categories and Channels from the IPTV Provider"
+
+msgctxt "#30511"
+msgid "Fetches user info and subscription info from the IPTV Provider"
+msgstr "Fetches user info and subscription info from the IPTV Provider"
