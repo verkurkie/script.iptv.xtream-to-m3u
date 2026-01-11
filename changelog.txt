@@ -1,3 +1,6 @@
+v1.0.9
+- refactor: misc fixes and enhancements
+
 v1.0.8
 - refactor: add channel filtering
 
