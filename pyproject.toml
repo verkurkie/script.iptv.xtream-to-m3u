@@ -8,7 +8,7 @@ commit_parser = "conventional"
 [tool.semantic_release.commit_parser_options]
 major_tags = ["major"]
 minor_tags = ["feat", "feature"]
-patch_tags = ["fix", "perf", "refactor", "style", "ci", "chore", "docs", "test"]
+patch_tags = ["fix", "perf", "refactor", "style"]
 
 [tool.semantic_release.publish]
 upload_to_vcs_release = false

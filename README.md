@@ -4,9 +4,9 @@ This addon converts Xtream categories to and M3U playlist. This is targeted at u
 
 ## Features
 
-- Link to IPTV Simple Client configuration
-- Selection of Live Categories
-  - categories will be fetched from provider on first run
+- Integration with the fantastic IPTV Simple Client add-on
+- Selection of TV Channel Categories
+  - categories will be fetched from provider using xtream API
   - a playlist will be generated whenever selection is made/updated
 - Generate M3U playlist and configure it in IPTV Simple Client (incl. EPG link)
 
@@ -16,11 +16,6 @@ This addon converts Xtream categories to and M3U playlist. This is targeted at u
 - IPTV Simple Client addon (will be installed & enabled if necessary)
 - An Xtream compatible account
 
-## Installation
+## Installation & Configuration
 
-1. Download the ZIP file from the releases page
-2. Install the addon in Kodi via the addon manager (using the "Install from zip" option)
-3. Configure the addon with your Xtream IPTV account details
-4. Select the Live Categories you want to convert (will auto-generate the M3U file)
-5. Test it in IPTV Simple Client and/or the TV section of kodi
-   - should have working channels and EPG guide
+See instructions in [INSTALL.md](docs/INSTALL.md)
