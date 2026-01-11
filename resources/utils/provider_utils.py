@@ -7,7 +7,7 @@ import urllib.request
 import json
 from datetime import datetime
 
-from .common import log, get_api_url
+from .common import log, get_api_url, set_setting
 
 ADDON = xbmcaddon.Addon()
 
@@ -15,7 +15,7 @@ ADDON = xbmcaddon.Addon()
 def get_live_categories():
     api_url = get_api_url()
     if not api_url:
-        return
+        return False
 
     api_url += "&action=get_live_categories"
     log(f"Fetching xtream live categories from: {api_url}")
@@ -44,7 +44,7 @@ def get_live_categories():
         log(f"Live categories saved to: {output_path}")
 
         # Update the setting in the UI
-        ADDON.setSetting(
+        set_setting(
             "category_status",
             f"[{item_count}] Categories ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})",
         )

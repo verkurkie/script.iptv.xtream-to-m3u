@@ -155,6 +155,9 @@ def build_zip(addon_id, version, dry_run=False):
 def main():
     parser = argparse.ArgumentParser(description="Build and version Kodi Addon")
     parser.add_argument("--version", help="New version number to set")
+    parser.add_argument(
+        "--zip-only", action="store_true", help="Only create the ZIP file"
+    )
     parser.add_argument("--dry-run", action="store_true", help="Do not write any files")
 
     args = parser.parse_args()
@@ -162,7 +165,7 @@ def main():
     addon_id, current_version = get_addon_info()
     version = args.version if args.version else current_version
 
-    if args.version:
+    if args.version and not args.zip_only:
         update_addon_xml(version, args.dry_run)
         update_changelog(version, args.dry_run)
 

@@ -8,11 +8,10 @@ import xbmcaddon
 import json
 from datetime import datetime
 
-from .common import log
+from .common import log, get_setting, set_setting, get_m3u_file_path
 from .provider_utils import get_live_categories, get_live_streams
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10140)
 
 
 class M3uItem:
@@ -87,17 +86,20 @@ def make_playlist(final_ids=None):
     user_profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
     live_categories_path = os.path.join(user_profile_path, "live_categories.json")
     live_streams_path = os.path.join(user_profile_path, "live_streams.json")
+
     live_categories = (
         json.load(xbmcvfs.File(live_categories_path))
         if xbmcvfs.exists(live_categories_path)
         else get_live_categories()
     )
 
+    if not live_categories:
+        return False
+
     user_categories_ids = (
         ",".join(map(str, final_ids))
         if final_ids
-        else WINDOW.getProperty("script.iptv.xtream-to-m3u.user_categories_ids")
-        or ADDON.getSetting("user_categories_ids")
+        else get_setting("user_categories_ids")
     )
 
     live_streams = (
@@ -106,12 +108,12 @@ def make_playlist(final_ids=None):
         else get_live_streams()
     )
 
-    iptv_host = ADDON.getSetting("xtream_host")
-    iptv_port = ADDON.getSetting("xtream_port")
-    username = ADDON.getSetting("username")
-    password = ADDON.getSetting("password")
-    exclude_prefixes = ADDON.getSetting("exclude_prefixes")
-    strip_prefixes = ADDON.getSetting("strip_prefixes")
+    iptv_host = get_setting("xtream_host")
+    iptv_port = get_setting("xtream_port")
+    username = get_setting("username")
+    password = get_setting("password")
+    exclude_prefixes = get_setting("exclude_prefixes")
+    strip_prefixes = get_setting("strip_prefixes")
 
     category_map = {
         str(c.get("category_id")): c.get("category_name") for c in live_categories
@@ -128,13 +130,16 @@ def make_playlist(final_ids=None):
             "No categories selected.\nPlease select at least one category first.",
         )
         log("make_playlist: No categories selected. Aborting.")
-        return
+        return False
 
     m3u_entries = []
 
     # Filter out any channels that match any of the exclude regexes
-    exclude_prefixes = exclude_prefixes.split(",")
-    exclude_prefixes.append("✦●✦●")
+    if exclude_prefixes:
+        exclude_prefixes = exclude_prefixes.strip().split(",")
+        exclude_prefixes.append("✦●✦●")
+    else:
+        exclude_prefixes = ["✦●✦●"]
 
     for channel in live_streams:
         # Ensure category_id is a string and handle potential 'null' values from API
@@ -146,6 +151,7 @@ def make_playlist(final_ids=None):
 
         # Get the channel name and URL - strip the prefix if needed (do this BEFORE the exclude check!)
         tvg_name = channel.get("name", "")
+
         if strip_prefixes and " | " in tvg_name:
             tvg_name = tvg_name.split(" | ", 1)[1]
 
@@ -179,61 +185,61 @@ def make_playlist(final_ids=None):
     log(f"Total M3U entries added: {len(m3u_entries)}")
 
     # Write the M3U file
-    save_new_m3u(m3u_entries)
+    return save_new_m3u(m3u_entries)
 
 
 # saves the given m3u_entries into the file system
 def save_new_m3u(m3u_entries):
-    user_home_path = xbmcvfs.translatePath("special://home")
-    playlists_path = os.path.join(user_home_path, "userdata", "playlists")
-    if not xbmcvfs.exists(playlists_path):
-        xbmcvfs.mkdir(playlists_path)
-
-    m3u_file_path = os.path.join(playlists_path, ADDON.getSetting("m3u_filename"))
+    m3u_file_path = get_m3u_file_path()
 
     if m3u_entries is not None:
         log(f"Saving new m3u file: {m3u_file_path}")
         try:
-            with xbmcvfs.File(m3u_file_path, "w") as m3u_target_file:
-                m3u_target_file.write("#EXTM3U\n")
-                for entry in m3u_entries:
-                    meta = "#EXTINF:-1"
-                    logo = entry.tvg_logo
-                    if entry.tvg_id is not None and entry.tvg_id != "":
-                        channel_id = entry.tvg_id.lower()
-                        meta += f' tvg-id="{channel_id}"'
+            # Using File() object directly for maximum compatibility
+            f = xbmcvfs.File(m3u_file_path, "w")
+            f.write("#EXTM3U\n")
+            for entry in m3u_entries:
+                meta = "#EXTINF:-1"
+                logo = entry.tvg_logo
+                if entry.tvg_id is not None and entry.tvg_id != "":
+                    channel_id = entry.tvg_id.lower()
+                    meta += f' tvg-id="{channel_id}"'
 
-                    meta += f' tvg-name="{entry.tvg_name}"'
+                meta += f' tvg-name="{entry.tvg_name}"'
 
-                    if logo is not None and logo != "":
-                        meta += f' tvg-logo="{logo}"'
+                if logo is not None and logo != "":
+                    meta += f' tvg-logo="{logo}"'
 
-                    if entry.group_title is not None and entry.group_title != "":
-                        meta += f' group-title="{entry.group_title}"'
+                if entry.group_title is not None and entry.group_title != "":
+                    meta += f' group-title="{entry.group_title}"'
 
-                    if entry.timeshift is not None and entry.timeshift != "":
-                        meta += f' timeshift="{entry.timeshift}"'
+                if entry.timeshift is not None and entry.timeshift != "":
+                    meta += f' timeshift="{entry.timeshift}"'
 
-                    if entry.catchup_days is not None and entry.catchup_days != "":
-                        meta += f' catchup-days="{entry.catchup_days}"'
+                if entry.catchup_days is not None and entry.catchup_days != "":
+                    meta += f' catchup-days="{entry.catchup_days}"'
 
-                    if entry.catchup is not None and entry.catchup != "":
-                        meta += f' catchup="{entry.catchup}"'
+                if entry.catchup is not None and entry.catchup != "":
+                    meta += f' catchup="{entry.catchup}"'
 
-                    if entry.catchup_source is not None and entry.catchup_source != "":
-                        meta += f' catchup-source="{entry.catchup_source}"'
+                if entry.catchup_source is not None and entry.catchup_source != "":
+                    meta += f' catchup-source="{entry.catchup_source}"'
 
-                    meta += f", {entry.name}\n"
+                meta += f", {entry.name}\n"
 
-                    m3u_target_file.write(meta)
-                    m3u_target_file.write(f"{entry.url}\n")
+                f.write(meta)
+                f.write(f"{entry.url}\n")
+            f.close()
 
             log(f"M3U file written to {m3u_file_path}")
-            last_modified = xbmcvfs.Stat(m3u_file_path).st_mtime()
-            ADDON.setSetting(
+            stat = xbmcvfs.Stat(m3u_file_path)
+            last_modified = stat.st_mtime()
+            set_setting(
                 "playlist_status",
                 f"[{len(m3u_entries)}] channels ({datetime.fromtimestamp(last_modified).strftime('%Y-%m-%d %H:%M:%S')})",
             )
+            return True
         except Exception as e:
             log(f"Failed to write M3U file: {str(e)}", xbmc.LOGERROR)
-            ADDON.setSetting("playlist_status", "Failed to write file")
+            set_setting("playlist_status", "Failed to write file")
+            return False

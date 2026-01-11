@@ -50,6 +50,9 @@ def main():
     elif action == "select_pvr_instance":
         # User selection of IPTV Simple Client instance
         select_pvr_instance()
+    elif action == "make_playlist":
+        # Configure the IPTV Simple Client instance with the playlist and EPG link
+        make_playlist()
     elif action == "sync_to_pvr":
         # Configure the IPTV Simple Client instance with the playlist and EPG link
         sync_to_pvr()

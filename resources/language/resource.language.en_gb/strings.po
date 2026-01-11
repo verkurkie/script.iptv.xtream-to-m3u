@@ -63,8 +63,8 @@ msgid "M3U File Info"
 msgstr "M3U File Info"
 
 msgctxt "#30108"
-msgid "M3U Filename"
-msgstr "M3U Filename"
+msgid "M3U playlist Path"
+msgstr "M3U playlist Path"
 
 # ===================================================================
 # ----- 200 - Filters
@@ -111,24 +111,28 @@ msgctxt "#30302"
 msgid "Check IPTV Simple Client"
 msgstr "Check IPTV Simple Client"
 
-msgctxt "#30305"
-msgid "Reset PVR"
-msgstr "Reset PVR"
+msgctxt "#30303"
+msgid "Sync playlist to IPTV Simple Client"
+msgstr "Sync playlist to IPTV Simple Client"
 
 msgctxt "#30304"
 msgid "Rebuild M3U playlist and sync PVR"
 msgstr "Rebuild M3U playlist and sync PVR"
 
-msgctxt "#30303"
-msgid "Sync playlist to IPTV Simple Client"
-msgstr "Sync playlist to IPTV Simple Client"
+msgctxt "#30305"
+msgid "Reset PVR"
+msgstr "Reset PVR"
+
+msgctxt "#30306"
+msgid "Make playlist (no sync)"
+msgstr "Make playlist (no sync)"
 
 # ----- Test actions
 msgctxt "#30313"
 msgid "Test actions"
 msgstr "Test actions"
 
-msgctxt "#30306"
+msgctxt "#30307"
 msgid "Test action"
 msgstr "Test action"
 
@@ -172,8 +176,8 @@ msgid "If set to true, will strip country prefixes (like "US | " or "UK | ") fro
 msgstr "If set to true, will strip country prefixes (like "US | " or "UK | ") from channel names"
 
 msgctxt "#30509"
-msgid "Help text 509"
-msgstr "Help text 509"
+msgid "The path to the M3U playlist file (file will be named after the PVR instance name)"
+msgstr "The path to the M3U playlist file (file will be named after the PVR instance name)"
 
 msgctxt "#30510"
 msgid "Help text 510"

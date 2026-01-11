@@ -7,77 +7,72 @@ import urllib.request
 import json
 from datetime import datetime
 
-
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10140)
 
 
 def log(message, level=xbmc.LOGINFO):
     xbmc.log(f"[script.iptv.xtream-to-m3u] {message}", level)
 
 
-def get_settings(skip_cache=False):
+def get_setting(key):
     """
-    Returns settings.
-    By default, it checks window properties (Hot Cache) first to support
-    unsaved UI changes. Use skip_cache=True for a disk-only check.
+    Returns the value of a setting in the following priority order:
+    - from the ADDON WINDOW (session memory) - this is populated by python code and does not contain "fresh" UI values
+    - from the ADDON (disk) - does not contain "fresh" UI values
     """
-    props = [
-        "xtream_host",
-        "xtream_port",
-        "username",
-        "password",
-        "m3u_filename",
-        "user_categories_ids",
-    ]
+    CURRENT_WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+    session_value = CURRENT_WINDOW.getProperty(f"script.iptv.xtream-to-m3u.{key}")
+    disk_value = ADDON.getSetting(key)
+    if session_value and session_value != disk_value:
+        return session_value
+    else:
+        return disk_value
 
-    data = {}
-    for p in props:
-        # Check disk
-        disk_val = ADDON.getSetting(p)
-        log(f"Disk value for {p}: {disk_val}")
 
-        if skip_cache:
-            data[p] = disk_val
-        else:
-            # Check for "hot" property in Home window
-            prop_name = f"script.iptv.xtream-to-m3u.{p}"
-            hot_val = WINDOW.getProperty(prop_name)
-            log(f"Hot value for {p}: {hot_val}")
-
-            # Use hot value if it exists, otherwise fallback to disk
-            data[p] = hot_val if hot_val != "" else disk_val
-
-    # Default overrides
-    if not data["m3u_filename"]:
-        data["m3u_filename"] = "xtream-to-m3u.m3u"
-
-    # Standardize dictionary keys to use the same logic as before
-    return {
-        "host": data["xtream_host"],
-        "port": data["xtream_port"],
-        "username": data["username"],
-        "password": data["password"],
-        "m3u_filename": data["m3u_filename"],
-        "user_categories_ids": data["user_categories_ids"],
-    }
+def set_setting(key, value, addon=True):
+    CURRENT_WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
+    CURRENT_WINDOW.setProperty(f"script.iptv.xtream-to-m3u.{key}", value)
+    if addon:
+        ADDON.setSetting(key, value)  # This won't be save until user hits OK button
 
 
 def get_api_url():
-    settings = get_settings()
-    host = settings["host"].rstrip("/")
-    port = settings["port"]
-    user = settings["username"]
-    password = settings["password"]
+    host = get_setting("xtream_host").rstrip("/")
+    port = get_setting("xtream_port")
+    user = get_setting("username")
+    password = get_setting("password")
 
     if not host or not user or not password:
-        log("Missing account details", xbmc.LOGERROR)
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U", "Please configure your account details first."
+        log(
+            f"Missing account details: {host}, {port}, {user}, {password}",
+            xbmc.LOGERROR,
         )
+        xbmcgui.Dialog().ok("Xtream to M3U", "Please save IPTV Provider Info first.")
         return None
 
     return f"{host}:{port}/player_api.php?username={user}&password={password}"
+
+
+def get_m3u_file_path():
+    from .pvr_utils import check_pvr
+
+    if not check_pvr():
+        return None
+
+    m3u_path = get_setting("m3u_path").strip()
+    pvr_instance_name = get_setting("pvr_instance_name").strip()
+
+    if not m3u_path:
+        m3u_path = "special://home/userdata/playlists"
+
+    # Normalize path by translating special:// to absolute native paths
+    full_path = xbmcvfs.translatePath(m3u_path)
+
+    # Convert PVR instance name to lower-kebab case
+    pvr_instance_name = pvr_instance_name.lower().replace(" ", "-")
+
+    m3u_file_path = os.path.join(full_path, f"{pvr_instance_name}.m3u8")
+    return m3u_file_path
 
 
 def system_check():
@@ -92,8 +87,7 @@ def system_check():
     }
 
     # Use the unified settings pull (checks properties first to reflect unsaved UI changes)
-    user_settings = get_settings()
-    user_categories_ids = user_settings["user_categories_ids"] or None
+    user_categories_ids = get_setting("user_categories_ids") or None
     # Strip whitespace and split
     raw_ids = user_categories_ids.strip() if user_categories_ids else ""
     # Filter out empty strings from the list
@@ -156,6 +150,7 @@ def system_check():
         }
 
     # Live categories & streams
+    log("Checking live categories & streams...")
     user_profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
     live_categories_path = os.path.join(user_profile_path, "live_categories.json")
     live_streams_path = os.path.join(user_profile_path, "live_streams.json")
@@ -164,6 +159,7 @@ def system_check():
         last_modified = xbmcvfs.Stat(live_categories_path).st_mtime()
         with xbmcvfs.File(live_categories_path, "r") as f:
             categories = json.loads(f.read())
+            log(f"Live categories read: {len(categories)} characters")
 
         if not categories or not isinstance(categories, list):
             system_checks["live_categories"] = {
@@ -220,21 +216,31 @@ def system_check():
         }
 
     # Playlist status
-    user_home_path = xbmcvfs.translatePath("special://home")
-    playlists_path = os.path.join(user_home_path, "userdata", "playlists")
-    m3u_file_path = os.path.join(playlists_path, ADDON.getSetting("m3u_filename"))
+    log("Checking playlist status...")
+    m3u_file_path = get_m3u_file_path()
+
+    if not m3u_file_path:
+        return
 
     if xbmcvfs.exists(m3u_file_path):
-        last_modified = xbmcvfs.Stat(m3u_file_path).st_mtime()
-        # Get the channel count from the m3u file
-        channel_count = 0
-        with xbmcvfs.File(m3u_file_path, "r") as f:
-            content = f.read()
-            channel_count = content.count("#EXTINF")
+        stat = xbmcvfs.Stat(m3u_file_path)
+        file_size = stat.st_size()
+        last_modified = stat.st_mtime()
+
+        log(f"Found M3U file: {m3u_file_path} (Size: {file_size} bytes)")
+        content = ""
+        f = xbmcvfs.File(m3u_file_path, "r")
+        content = f.read()
+        f.close()
+
+        log(f"M3U file read: {len(content)} characters")
+
+        channel_count = content.count("#EXTINF")
 
         system_checks["playlist"] = {
             "status": "ok",
             "count": channel_count,
+            "path": m3u_file_path,
             "last_modified": datetime.fromtimestamp(last_modified).strftime(
                 "%Y-%m-%d %H:%M:%S"
             ),
@@ -243,10 +249,12 @@ def system_check():
         system_checks["playlist"] = {
             "status": "error",
             "count": None,
+            "path": m3u_file_path,
             "last_modified": None,
         }
 
-    # IPTV Simple Client
+    # IPTV Simple Client status
+    log("Checking PVR status...")
     try:
         # We use xbmcaddon.Addon just to check if it exists in the system
         # Note: This may fail if it's completely missing
@@ -312,7 +320,7 @@ def system_check():
     add_line(
         "User Categories",
         uc_info,
-        f"{uc_info['ids']}",
+        f"{uc_info['count']} selected",
     )
 
     lc = system_checks.get("live_categories", {})
@@ -330,10 +338,12 @@ def system_check():
     pl = system_checks.get("playlist", {})
     if pl.get("count") is not None:
         add_line(
-            "Playlist", pl, f"{pl['count']} channels (Built: {pl['last_modified']})"
+            "Playlist",
+            pl,
+            f"{pl['count']} channels (Built: {pl['last_modified']})\n- Path: {pl['path']}",
         )
     else:
-        add_line("Playlist", pl, "M3U file not found")
+        add_line("Playlist", pl, f"File not found!\n- Path: {pl['path']}")
 
     # PVR
     pvr = system_checks.get("pvr", {})
@@ -341,8 +351,8 @@ def system_check():
 
     add_line(
         "PVR Instance",
-        {"status": "ok" if ADDON.getSetting("pvr_instance_id") != "" else "error"},
-        f"{ADDON.getSetting('pvr_instance_name')} (ID:{ADDON.getSetting('pvr_instance_id')})",
+        {"status": "ok" if get_setting("pvr_instance_id") != "" else "error"},
+        f"{get_setting('pvr_instance_name')} (ID:{get_setting('pvr_instance_id')})",
     )
 
     # Footer

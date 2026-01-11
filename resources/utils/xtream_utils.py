@@ -5,17 +5,19 @@ import xbmcgui
 import xbmcvfs
 import xbmcaddon
 
-from .common import log
+from .common import log, set_setting, get_setting
 from .m3u_utils import make_playlist
 from .provider_utils import get_live_categories
-from .pvr_utils import refresh_pvr
+from .pvr_utils import refresh_pvr, check_pvr
 
 ADDON = xbmcaddon.Addon()
-WINDOW = xbmcgui.Window(10140)
 
 
 def select_categories():
     log("select_categories: Starting category selection process.")
+    if not check_pvr():
+        return
+
     try:
         profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
         if not xbmcvfs.exists(profile_path):
@@ -26,10 +28,12 @@ def select_categories():
 
         # Get categories - fetch from provider if needed
         if not xbmcvfs.exists(input_path):
+            categories = get_live_categories()
+            if not categories:
+                return
             xbmcgui.Dialog().notification(
                 "Xtream to M3U", "Fetching categories from provider..."
             )
-            categories = get_live_categories()
         else:
             with xbmcvfs.File(input_path, "r") as f:
                 categories = json.loads(f.read())
@@ -52,7 +56,7 @@ def select_categories():
 
         # Fallback to settings ONLY if JSON was never found/loaded
         if current_selected is None:
-            current_ids_raw = ADDON.getSetting("user_categories_ids")
+            current_ids_raw = get_setting("user_categories_ids")
             log(
                 f"select_categories: No JSON found, falling back to settings. Raw: '{current_ids_raw}'"
             )
@@ -117,10 +121,7 @@ def select_categories():
             log(f"Failed to save selected_categories.json: {str(e)}")
 
         # Update Settings (For summary and backup)
-        ADDON.setSetting("user_categories_ids", ",".join(final_ids))
-        WINDOW.setProperty(
-            "script.iptv.xtream-to-m3u.user_categories_ids", ",".join(final_ids)
-        )
+        set_setting("user_categories_ids", ",".join(final_ids))
 
         # Update the playlist with the selected IDs (only if the selection changed)
         if final_ids != current_selected:
