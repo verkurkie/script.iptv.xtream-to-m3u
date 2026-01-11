@@ -1,3 +1,6 @@
+v1.0.8
+- refactor: add channel filtering
+
 v1.0.7
 - fix: various issues observed on other installations of Kodi
 
