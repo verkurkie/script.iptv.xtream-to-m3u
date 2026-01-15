@@ -1,3 +1,7 @@
+v1.0.10
+- refactor: improve status report, reorg layout, added test provider function
+- docs: add installation and config instructions
+
 v1.0.9
 - refactor: misc fixes and enhancements
 
