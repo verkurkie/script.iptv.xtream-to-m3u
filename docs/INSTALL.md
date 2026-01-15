@@ -6,6 +6,7 @@ This document helps you install and configure the addon.
 
 - [Installation](#installation)
 - [Configuration](#configuration)
+  - [First time setup](#first-time-setup)
   - [General](#general)
       - [General -\> PVR Instance](#general---pvr-instance)
       - [General -\> Select Categories](#general---select-categories)
@@ -19,28 +20,52 @@ To install the add-on, follow these steps:
 
 1. Download the latest ZIP file from the [releases page](https://github.com/verkurkie/script.iptv.xtream-to-m2u/releases)
 
-   ![install](./assets/github_releases.png)
+![install](./assets/github_releases.png)
 
 2. Install the addon in Kodi via the addon manager (using the "Install from zip file" option)
 
+   - In Kodi, go to Add-ons -> Install from zip file
+   - Select the downloaded ZIP file
+
    ❗ If you see a message about installing from unknown source, enable it in Kodi settings before installing!
 
-   ![install](./assets/kodi_install.png)
+![install](./assets/kodi_install_zip.png)
+
 
 ## Configuration
 
-Assuming the installation went well, you can now start the add-on configuration!
+To configure the add-on anytime after the first setup, follow these steps:
 
-- In Kodi, go to System Settings -> Add-ons -> My add-ons -> Program add-ons -> Xtream to M3U
-- Make sure the add-on is enabled
+- In Kodi, go to Add-ons -> My add-ons -> Program add-ons -> click on "Xtream to M3U"
+- Make sure the add-on is enabled!
 - Click on "Configure"
+
+![configure](./assets/kodi_addon_main.png)
+
+### First time setup
+
+When you run the add-on for the first time, or if critical settings are missing, you will be asked to provide them.
+
+![configure](./assets/kodi_addon_first_time.png)
+
+The process will ask for the following details:
+
+- Xtream info:
+  - Host
+  - Port
+  - Username
+  - Password
+- PVR instance:
+  - Select an existing PVR instance in the IPTV Simple Client add-on
+
+![configure](./assets/kodi_addon_first_time_host.png)
 
 ### General
 
-- ❗ **Important: You must enter & save your Xtream IPTV credentials on the first run!**
+- ❗ **Important: You have to select a PVR instance and enter & save your Xtream IPTV credentials on the first run!**
   - Without this, the addon will not function.
 
-  ![install](./assets/kodi_config_general.png)
+![configure](./assets/kodi_config_general.png)
 
 ##### General -> PVR Instance
 
@@ -48,7 +73,7 @@ Once you have set your credentials and saved them, return to the configuration s
 
 - ℹ️ If IPTV Simple Client is not installed, the addon will ask you to install it.
 
-  ![install](./assets/kodi_config_pvr_instance.png)
+![configure](./assets/kodi_config_pvr_instance.png)
 
 ##### General -> Select Categories
 
@@ -60,7 +85,7 @@ After selecting a PVR instance, you can start selecting your desired TV Channel 
 
 - 💡 **Tip**: You can "jump" through the list of categories by simultaneously pressing `SHIFT` and any letter -> it will jump to the first category that starts with that letter.
 
-  ![install](./assets/kodi_config_select_categories.png)
+![configure](./assets/kodi_config_select_categories.png)
 
 ### Filters
 
@@ -71,7 +96,7 @@ Filters can be used to further fine-tune your playlist. Your have the following 
 - **Strip country prefixes from channel names**
   - when this option is selected, the add-on will remove country prefixes (like `"US | "` -> `"UK | "`) from channel names
 
-  ![install](./assets/kodi_config_filters.png)
+![configure](./assets/kodi_config_filters.png)
 
 ### Actions
 
@@ -86,14 +111,13 @@ The "Actions" tab is where you can find the add-on status and perform actions th
 - **Make playlist (no sync)**
   - this will only rebuild your M3U playlist (so you can inspect it)
 
-  ![install](./assets/kodi_config_actions.png)
+![configure](./assets/kodi_config_actions.png)
 
-  ![install](./assets/kodi_config_actions_status.png)
+![configure](./assets/kodi_config_actions_status.png)
 
 ## Test it
 
 Once you have gone through configuring the add-on, make sure you always click on OK!
 Then, head over to the "TV" section of Kodi and check if your groups/channels are there.
 
-🎉 Happy Kodi'ing!
-
+🎉 Happy Kodi-ing!

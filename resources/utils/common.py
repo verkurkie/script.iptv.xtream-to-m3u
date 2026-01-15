@@ -1,4 +1,5 @@
 import os
+import re
 import xbmc
 import xbmcgui
 import xbmcaddon
@@ -6,23 +7,47 @@ import xbmcvfs
 import urllib.request
 import json
 from datetime import datetime
+from contextlib import contextmanager
+import threading
 
 ADDON = xbmcaddon.Addon()
 
 
 def log(message, level=xbmc.LOGINFO):
+    # Look for presence of password in the message
+    password = get_setting("password")
+    if password in message:
+        message = message.replace(password, "********")
+
+    # Also do a generic check for 'password=' in string - replace any word that follows the '=' with '********'
+    if "password=" in message:
+        message = re.sub(r"password=\w+", "password=********", message)
+
     xbmc.log(f"[script.iptv.xtream-to-m3u] {message}", level)
 
 
-def get_setting(key):
+@contextmanager
+def busy_dialog(caller=None):
+    xbmc.executebuiltin("ActivateWindow(busydialognocancel)")
+    try:
+        yield
+    finally:
+        xbmc.executebuiltin("Dialog.Close(busydialognocancel)")
+
+
+def get_setting(key, window=True):
     """
     Returns the value of a setting in the following priority order:
     - from the ADDON WINDOW (session memory) - this is populated by python code and does not contain "fresh" UI values
     - from the ADDON (disk) - does not contain "fresh" UI values
     """
-    CURRENT_WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-    session_value = CURRENT_WINDOW.getProperty(f"script.iptv.xtream-to-m3u.{key}")
+    if window:
+        WINDOW = xbmcgui.Window(10000)
+        session_value = WINDOW.getProperty(f"script.iptv.xtream-to-m3u.{key}")
+    else:
+        session_value = None
     disk_value = ADDON.getSetting(key)
+
     if session_value and session_value != disk_value:
         return session_value
     else:
@@ -30,10 +55,51 @@ def get_setting(key):
 
 
 def set_setting(key, value, addon=True):
-    CURRENT_WINDOW = xbmcgui.Window(xbmcgui.getCurrentWindowId())
-    CURRENT_WINDOW.setProperty(f"script.iptv.xtream-to-m3u.{key}", value)
+    WINDOW = xbmcgui.Window(10000)
+    WINDOW.setProperty(f"script.iptv.xtream-to-m3u.{key}", value)
     if addon:
         ADDON.setSetting(key, value)  # This won't be save until user hits OK button
+
+
+def make_request(api_action=None, timeout=10):
+    # Test provider connection
+    api_url = get_api_url()
+    if not api_url:
+        return
+
+    if api_action:
+        api_url += f"&action={api_action}"
+
+    req = urllib.request.Request(api_url, headers={"User-Agent": "Mozilla/5.0"})
+
+    # Log the request URL with masked password
+    log(f"Making HTTP request: {api_url}")
+
+    # Enforce strict timeout by running in a separate thread
+    # This is necessary because socket timeouts on Windows may not affect DNS resolution or multiple IP retries
+    result = [None]
+    error = [None]
+
+    def _request_worker():
+        try:
+            # We still use a socket timeout for the internal operation
+            # This helps the thread eventually die if it hangs
+            with urllib.request.urlopen(req, timeout=timeout) as response:
+                result[0] = response.read().decode("utf-8", errors="ignore")
+        except Exception as e:
+            error[0] = e
+
+    t = threading.Thread(target=_request_worker)
+    t.start()
+    t.join(timeout=timeout + 0.1)  # Strict wall-clock timeout
+
+    if t.is_alive():
+        raise TimeoutError(f"Connection timed out ({timeout}s timeout)")
+
+    if error[0]:
+        raise error[0]
+
+    return result[0]
 
 
 def get_api_url():
@@ -42,12 +108,18 @@ def get_api_url():
     user = get_setting("username")
     password = get_setting("password")
 
-    if not host or not user or not password:
+    # Check if the host is a valid URL
+    is_valid_url = re.match(r"^https?://", host)
+
+    if not host or not user or not password or not is_valid_url:
         log(
-            f"Missing account details: {host}, {port}, {user}, {password}",
+            f"Missing account details for API URL: host: {host}, port: {port}, user: {user}, password: {password}",
             xbmc.LOGERROR,
         )
-        xbmcgui.Dialog().ok("Xtream to M3U", "Please save IPTV Provider Info first.")
+        xbmcgui.Dialog().ok(
+            "Xtream to M3U",
+            "Missing or invalid IPTV Provider account details.\nPlease complete and save them first.",
+        )
         return None
 
     return f"{host}:{port}/player_api.php?username={user}&password={password}"
@@ -94,42 +166,28 @@ def system_check():
         # Use a simpler layout that works better with proportional fonts
         report.append(f"{colored_status} {label}: {detail}")
 
-    # Test provider connection
-    api_url = get_api_url()
-    if not api_url:
-        return
+    log("[system check] checking IPTV Provider...")
+    from .provider_utils import test_provider
 
-    log(f"Testing provider connection: {api_url}")
+    data = test_provider()
+    user_info = data.get("user_info", {})
+    status = user_info.get("status", "Unknown")
+    expiry = user_info.get("exp_date", None)
 
-    try:
-        from .provider_utils import test_provider
+    # Format expiry (Xtream uses unix timestamp)
+    if expiry:
+        expiry_str = datetime.fromtimestamp(int(expiry)).strftime("%Y-%m-%d")
+    else:
+        expiry_str = "N/A"
 
-        data = test_provider()
-        user_info = data.get("user_info", {})
-        status = user_info.get("status", "Unknown")
-        expiry = user_info.get("exp_date", "0")
-
-        # Format expiry (Xtream uses unix timestamp)
-        if expiry and expiry != "null":
-            expiry_str = datetime.fromtimestamp(int(expiry)).strftime("%Y-%m-%d")
-        else:
-            expiry_str = "Never"
-
-        add_line(
-            "Account status",
-            "ok" if status == "Active" else "error",
-            f"Exp: {expiry_str}\n",
-        )
-
-    except urllib.error.URLError as e:
-        log(f"Failed to test server: {str(e)}", xbmc.LOGERROR)
-        add_line("Provider", "error", "Exp: N/A")
-    except Exception as e:
-        log(f"Unexpected error: {str(e)}", xbmc.LOGERROR)
-        add_line("Provider", "error", "Exp: N/A")
+    add_line(
+        "Account status",
+        "ok" if status == "Active" else "error",
+        f"Expiry: {expiry_str}\n",
+    )
 
     # Live categories & streams
-    log("Checking live categories & streams...")
+    log("[system check] checking live categories & streams...")
     user_profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
     live_categories_path = os.path.join(user_profile_path, "live_categories.json")
     live_streams_path = os.path.join(user_profile_path, "live_streams.json")
@@ -138,7 +196,6 @@ def system_check():
         last_modified = xbmcvfs.Stat(live_categories_path).st_mtime()
         with xbmcvfs.File(live_categories_path, "r") as f:
             categories = json.loads(f.read())
-            log(f"Live categories read: {len(categories)} characters")
 
         if not categories or not isinstance(categories, list):
             add_line(
@@ -178,6 +235,8 @@ def system_check():
     else:
         add_line("Streams", "error", "Count: 0")
 
+    log("[system check] checking user selected categories...")
+
     # User selected categories
     user_categories_ids = get_setting("user_categories_ids") or None
     # Strip whitespace and split
@@ -187,9 +246,6 @@ def system_check():
 
     user_category_count = len(user_category_list)
 
-    log(f"user categories: {user_categories_ids}")
-    log(f"user category count: {user_category_count}")
-
     add_line(
         label="User Categories",
         status="ok" if user_category_count > 0 else "error",
@@ -197,7 +253,7 @@ def system_check():
     )
 
     # IPTV Simple Client status
-    log("Checking PVR status...")
+    log("[system check] checking PVR status...")
     try:
         # We use xbmcaddon.Addon just to check if it exists in the system
         # Note: This may fail if it's completely missing
@@ -230,7 +286,7 @@ def system_check():
         add_line("PVR Client", "error", "Not installed")
 
     # Playlist status
-    log("Checking playlist status...")
+    log("[system check] checking playlist status...")
     m3u_file_path = get_m3u_file_path()
 
     if not m3u_file_path:
@@ -238,16 +294,12 @@ def system_check():
 
     if xbmcvfs.exists(m3u_file_path):
         stat = xbmcvfs.Stat(m3u_file_path)
-        file_size = stat.st_size()
         last_modified = stat.st_mtime()
 
-        log(f"Found M3U file: {m3u_file_path} (Size: {file_size} bytes)")
         content = ""
         f = xbmcvfs.File(m3u_file_path, "r")
         content = f.read()
         f.close()
-
-        log(f"M3U file read: {len(content)} characters")
 
         channel_count = content.count("#EXTINF")
         add_line(
@@ -260,6 +312,20 @@ def system_check():
 
     # Footer
     report.append("-" * 30)
+    report.append("Addon settings:")
+
+    # Dump Settings
+    settings_dump = {
+        "host": get_setting("xtream_host"),
+        "port": get_setting("xtream_port"),
+        "user": get_setting("username"),
+        "password": "*******",
+        "pvr": get_setting("pvr_instance_name"),
+        "pvr_id": get_setting("pvr_instance_id"),
+        "m3u": get_setting("m3u_path"),
+        "categories": get_setting("user_categories_ids"),
+    }
+    report.append(json.dumps(settings_dump, indent=2))
 
     report_str = "\n".join(report)
 

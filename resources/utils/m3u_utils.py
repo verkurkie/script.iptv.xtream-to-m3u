@@ -5,11 +5,9 @@ import xbmc
 import xbmcgui
 import xbmcvfs
 import xbmcaddon
-import json
-from datetime import datetime
 
-from .common import log, get_setting, set_setting, get_m3u_file_path
-from .provider_utils import get_live_categories, get_live_streams
+from .common import log, get_setting, get_m3u_file_path
+from .provider_utils import get_iptv_data
 
 ADDON = xbmcaddon.Addon()
 
@@ -59,9 +57,9 @@ class M3uItem:
                     self.catchup_source = match.group(1)
                 self.name = re.search('" ?,(.*)$', m3u_fields, re.IGNORECASE).group(1)
             except AttributeError as e:
-                log(f"m3u file parse AttributeError: {e}", xbmc.LOGERROR)
+                log(f"[m3u_utils] m3u file parse AttributeError: {e}", xbmc.LOGERROR)
             except Exception as ex:
-                log(f"m3u file parse Exception: {ex}", xbmc.LOGERROR)
+                log(f"[m3u_utils] m3u file parse Exception: {ex}", xbmc.LOGERROR)
 
         if self.tvg_name is None or self.tvg_name == "":
             self.tvg_name = self.name
@@ -78,46 +76,12 @@ class M3uItem:
         return isvalid
 
 
-def make_playlist(final_ids=None):
-    # convert the JSON formatted live channels to M3U format
-    if final_ids:
-        log(f"make_playlist: Using final_ids: {','.join(map(str, final_ids))}")
-
-    user_profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
-    live_categories_path = os.path.join(user_profile_path, "live_categories.json")
-    live_streams_path = os.path.join(user_profile_path, "live_streams.json")
-
-    live_categories = (
-        json.load(xbmcvfs.File(live_categories_path))
-        if xbmcvfs.exists(live_categories_path)
-        else get_live_categories()
-    )
-
-    if not live_categories:
-        return False
-
+def make_playlist(final_ids=None, silent=True):
     user_categories_ids = (
         ",".join(map(str, final_ids))
         if final_ids
         else get_setting("user_categories_ids")
     )
-
-    live_streams = (
-        json.load(xbmcvfs.File(live_streams_path))
-        if xbmcvfs.exists(live_streams_path)
-        else get_live_streams()
-    )
-
-    iptv_host = get_setting("xtream_host")
-    iptv_port = get_setting("xtream_port")
-    username = get_setting("username")
-    password = get_setting("password")
-    exclude_prefixes = get_setting("exclude_prefixes")
-    strip_prefixes = get_setting("strip_prefixes")
-
-    category_map = {
-        str(c.get("category_id")): c.get("category_name") for c in live_categories
-    }
 
     # Create a set from the comma-separated setting string for accurate matching
     selected_id_set = set(
@@ -129,8 +93,28 @@ def make_playlist(final_ids=None):
             "Xtream to M3U",
             "No categories selected.\nPlease select at least one category first.",
         )
-        log("make_playlist: No categories selected. Aborting.")
+        log("[make_playlist] no categories selected. aborting.")
         return False
+
+    # convert the JSON formatted live channels to M3U format
+    if final_ids:
+        log(f"[make_playlist] using final_ids: {','.join(map(str, final_ids))}")
+
+    live_categories, live_streams = get_iptv_data()
+
+    if not live_categories or not live_streams:
+        return False
+
+    iptv_host = get_setting("xtream_host")
+    iptv_port = get_setting("xtream_port")
+    username = get_setting("username")
+    password = get_setting("password")
+    exclude_prefixes = get_setting("exclude_prefixes")
+    strip_prefixes = get_setting("strip_prefixes")
+
+    category_map = {
+        str(c.get("category_id")): c.get("category_name") for c in live_categories
+    }
 
     m3u_entries = []
 
@@ -182,18 +166,14 @@ def make_playlist(final_ids=None):
             # This is a keeper for the playlist!
             m3u_entries.append(m3u_entry)
 
-    log(f"Total M3U entries added: {len(m3u_entries)}")
+    log(f"[make_playlist] total M3U entries added: {len(m3u_entries)}")
 
     # Write the M3U file
-    return save_new_m3u(m3u_entries)
-
-
-# saves the given m3u_entries into the file system
-def save_new_m3u(m3u_entries):
     m3u_file_path = get_m3u_file_path()
+    write_success = False
 
     if m3u_entries is not None:
-        log(f"Saving new m3u file: {m3u_file_path}")
+        log(f"[make_playlist] saving new m3u file: {m3u_file_path}")
         try:
             # Using File() object directly for maximum compatibility
             f = xbmcvfs.File(m3u_file_path, "w")
@@ -229,17 +209,17 @@ def save_new_m3u(m3u_entries):
 
                 f.write(meta)
                 f.write(f"{entry.url}\n")
-            f.close()
 
-            log(f"M3U file written to {m3u_file_path}")
-            stat = xbmcvfs.Stat(m3u_file_path)
-            last_modified = stat.st_mtime()
-            set_setting(
-                "playlist_status",
-                f"[{len(m3u_entries)}] channels ({datetime.fromtimestamp(last_modified).strftime('%Y-%m-%d %H:%M:%S')})",
-            )
-            return True
+            f.close()
+            log(f"[make_playlist] M3U file written to {m3u_file_path}")
+
+            write_success = True
+
         except Exception as e:
-            log(f"Failed to write M3U file: {str(e)}", xbmc.LOGERROR)
-            set_setting("playlist_status", "Failed to write file")
-            return False
+            log(f"[make_playlist] failed to write M3U file: {str(e)}", xbmc.LOGERROR)
+            write_success = False
+
+    if not silent:
+        xbmcgui.Dialog().ok("Xtream to M3U", "M3U file saved successfully")
+
+    return write_success

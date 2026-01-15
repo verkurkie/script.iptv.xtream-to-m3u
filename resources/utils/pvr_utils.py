@@ -33,14 +33,14 @@ def check_pvr(check_instance=True):
         return True
     except RuntimeError:
         # Not installed
-        log("pvr.iptvsimple not found. Requesting installation...")
+        log("[check_pvr] Addon [pvr.iptvsimple] not found. Requesting installation...")
         # InstallAddon builtin will prompt user to install
         pvr_installed = xbmc.executebuiltin("InstallAddon(pvr.iptvsimple)")
         return pvr_installed
 
 
 def setup_pvr(silent=False):
-    log("Starting PVR Setup...")
+    log("[setup_pvr] starting PVR Setup...")
     try:
         if not check_pvr(check_instance=False):
             return
@@ -71,7 +71,7 @@ def setup_pvr(silent=False):
                 pvr_version = "Unknown"
 
         if not is_enabled:
-            log("pvr.iptvsimple is disabled. Enabling...")
+            log("[setup_pvr] Addon [pvr.iptvsimple] is disabled. Enabling...")
             rpc_enable = {
                 "jsonrpc": "2.0",
                 "method": "Addons.SetAddonEnabled",
@@ -80,16 +80,18 @@ def setup_pvr(silent=False):
             }
             xbmc.executeJSONRPC(json.dumps(rpc_enable))
 
-        log(f"pvr.iptvsimple v.{pvr_version} is installed and enabled.")
+        log(
+            f"[setup_pvr] Addon [pvr.iptvsimple] v.{pvr_version} is installed and enabled."
+        )
 
         if not silent:
             xbmcgui.Dialog().ok(
                 "Xtream to M3U",
-                f"pvr.iptvsimple v.{pvr_version} is installed and enabled!",
+                f"Addon [pvr.iptvsimple] v.{pvr_version} is installed and enabled!",
             )
 
     except Exception as e:
-        log(f"Error in setup_pvr: {str(e)}", xbmc.LOGERROR)
+        log(f"[setup_pvr] unexpected error: {str(e)}", xbmc.LOGERROR)
 
 
 def create_pvr_instance():
@@ -147,7 +149,7 @@ def create_pvr_instance():
         return None
 
     log(
-        f"Creating new PVR instance {next_id} ('{new_name}') using template: {source_path}"
+        f"[create_pvr_instance] creating new PVR instance {next_id} ('{new_name}') using template: {source_path}"
     )
 
     try:
@@ -175,7 +177,7 @@ def create_pvr_instance():
         with xbmcvfs.File(new_path, "w") as f:
             f.write(content)
 
-        log(f"Successfully created: {new_path}")
+        log(f"[create_pvr_instance] successfully created: {new_path}")
 
         xbmcgui.Dialog().notification(
             f"New PVR instance '{new_name}' (ID: {next_id}) created"
@@ -183,7 +185,10 @@ def create_pvr_instance():
         return {"id": str(next_id), "name": new_name, "path": new_path}
 
     except Exception as e:
-        log(f"Failed to create PVR instance: {str(e)}", xbmc.LOGERROR)
+        log(
+            f"[create_pvr_instance] failed to create PVR instance: {str(e)}",
+            xbmc.LOGERROR,
+        )
         xbmcgui.Dialog().ok("Error", f"Failed to create instance: {str(e)}")
         return None
 
@@ -229,12 +234,15 @@ def get_pvr_instances():
     return sorted(instances, key=lambda x: int(x["id"]))
 
 
-def select_pvr_instance():
+def select_pvr_instance(sync=True):
     """Shows a dialog to select which PVR instance to target."""
     current_instance_id = get_setting("pvr_instance_id")
     instances = get_pvr_instances()
     if not instances:
-        xbmcgui.Dialog().ok("Xtream to M3U", "No PVR instances found.")
+        xbmcgui.Dialog().ok(
+            "IPTV Simple Client",
+            "No instances found!\nPlease create one in IPTV Simple Client first.",
+        )
         return
 
     options = [f"{i['name']} (ID: {i['id']})" for i in instances]
@@ -258,11 +266,15 @@ def select_pvr_instance():
     set_setting("pvr_instance_id", str(selected["id"]))
     set_setting("pvr_instance_name", str(selected["name"]))
 
-    log(f"Instance selected: {selected['name']} (ID: {selected['id']})")
+    log(
+        f"[select_pvr_instance] instance selected: {selected['name']} (ID: {selected['id']})"
+    )
 
-    if selected["id"] != current_instance_id:
+    if sync and selected["id"] != current_instance_id:
         # Sync playlist and EPG to the new instance but only if the instance is different and there is an existing playlist!
         sync_to_pvr()
+
+    return selected
 
 
 def sync_to_pvr():
@@ -271,6 +283,18 @@ def sync_to_pvr():
         return
 
     try:
+        host = get_setting("xtream_host").rstrip("/")
+        port = get_setting("xtream_port")
+        user = get_setting("username")
+        password = get_setting("password")
+
+        if not user or not password:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "No credentials found.\nPlease enter & save your IPTV Provider credentials first.",
+            )
+            return
+
         if not make_playlist():
             return
 
@@ -280,10 +304,6 @@ def sync_to_pvr():
             xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
             return
 
-        host = get_setting("xtream_host").rstrip("/")
-        port = get_setting("xtream_port")
-        user = get_setting("username")
-        password = get_setting("password")
         user_categories_ids = get_setting("user_categories_ids")
 
         if not user_categories_ids or user_categories_ids.strip() == "":
@@ -291,7 +311,7 @@ def sync_to_pvr():
                 "Xtream to M3U",
                 "No categories selected.\nPlease select at least one category first.",
             )
-            log("sync_to_pvr: No categories selected. Aborting.")
+            log("[sync_to_pvr] no categories selected. Aborting...")
             return
 
         xbmcgui.Dialog().notification("Xtream to M3U", "Syncing to PVR...")
@@ -343,7 +363,7 @@ def sync_to_pvr():
         set_pvr_instance_xml(pvr_instance_id, xml_content)
 
         # Trigger PVR reload
-        refresh_pvr(silent=True)
+        reset_pvr(silent=True)
 
         xbmcgui.Dialog().ok(
             "Xtream to M3U",
@@ -351,7 +371,7 @@ def sync_to_pvr():
         )
 
     except Exception as e:
-        log(f"Error in sync_to_pvr: {str(e)}", xbmc.LOGERROR)
+        log(f"[sync_to_pvr] unexpected error: {str(e)}", xbmc.LOGERROR)
         xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
 
 
@@ -361,7 +381,7 @@ def get_pvr_instance_info(pvr_instance_id=None):
 
     if not pvr_instance_id:
         log(
-            "Cannot determine PVR instance ID: No PVR Instance ID provided/configured.",
+            "[get_pvr_instance_info] cannot determine PVR instance ID: No PVR Instance ID provided/configured.",
             xbmc.LOGERROR,
         )
         return None, None, None
@@ -381,7 +401,10 @@ def get_pvr_instance_info(pvr_instance_id=None):
         )
 
     if not xbmcvfs.exists(xml_path):
-        log(f"PVR Config file not found:\n{xml_path}", xbmc.LOGERROR)
+        log(
+            f"[get_pvr_instance_info] PVR Config file not found:\n{xml_path}",
+            xbmc.LOGERROR,
+        )
         return None, None, None
 
     with xbmcvfs.File(xml_path, "r") as f:
@@ -412,14 +435,17 @@ def set_pvr_instance_xml(pvr_instance_id=None, xml_content=None):
         )
 
     if not xbmcvfs.exists(xml_path):
-        log(f"PVR Config file not found:\n{xml_path}", xbmc.LOGERROR)
+        log(
+            f"[set_pvr_instance_xml] PVR Config file not found:\n{xml_path}",
+            xbmc.LOGERROR,
+        )
         return
 
     with xbmcvfs.File(xml_path, "w") as f:
         f.write(xml_content)
 
 
-def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
+def reset_pvr(pvr_instance_id=None, silent=False, categories=None):
     """
     Clears channel groups for a specific PVR instance to force a structural reload and
     forces pvr.iptvsimple to reload by toggling it off and on.
@@ -447,7 +473,7 @@ def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
                 "Xtream to M3U",
                 "No categories selected.\nPlease select at least one category first.",
             )
-        log("refresh_pvr: No categories selected. Aborting.")
+        log("[reset_pvr] no categories selected. Aborting.")
         return False
 
     # Database manipulation - removing the channel-groups will cause the PVR toggle (below) to re-process the M3U file
@@ -461,10 +487,13 @@ def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
     if filelist:
         path = filelist[-1]
     else:
-        log("Refresh PVR failed: TV database (TV*.db) not found.", xbmc.LOGERROR)
+        log(
+            "[reset_pvr] PVR reset failed: TV database (TV*.db) not found.",
+            xbmc.LOGERROR,
+        )
         return
 
-    log(f"Refreshing PVR (Client ID: {pvr_instance_id}) in {path}...")
+    log(f"[reset_pvr] resetting PVR (Client ID: {pvr_instance_id}) in {path}...")
 
     try:
         # Use context manager to ensure connection is closed properly
@@ -474,11 +503,11 @@ def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
             cursor.execute(
                 "DELETE FROM channelgroups WHERE iClientId = ?", (pvr_instance_id,)
             )
-            log(f"Database Reset: Deleted {cursor.rowcount} groups.")
+            log(f"[reset_pvr] database Reset: Deleted {cursor.rowcount} groups.")
             conn.commit()
 
     except Exception as e:
-        log(f"Error during PVR group reset: {str(e)}", xbmc.LOGERROR)
+        log(f"[reset_pvr] error during PVR DB group reset: {str(e)}", xbmc.LOGERROR)
 
     toggle_pvr(silent)
     return True
@@ -487,7 +516,7 @@ def refresh_pvr(pvr_instance_id=None, silent=False, categories=None):
 def toggle_pvr(silent=None):
     # Toggle PVR to force settings reload after DB manipulation
     try:
-        log("Toggling pvr.iptvsimple to force settings reload...")
+        log("[toggle_pvr] toggling Addon [pvr.iptvsimple] to force settings reload...")
         # Disable
         xbmc.executeJSONRPC(
             json.dumps(
@@ -526,4 +555,7 @@ def toggle_pvr(silent=None):
             )
 
     except Exception as e:
-        log(f"Error refreshing PVR: {str(e)}", xbmc.LOGERROR)
+        log(
+            f"[toggle_pvr] error toggling Addon [pvr.iptvsimple]: {str(e)}",
+            xbmc.LOGERROR,
+        )

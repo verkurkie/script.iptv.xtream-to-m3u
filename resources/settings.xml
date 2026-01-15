@@ -33,7 +33,7 @@
                 </setting>
             </group>
             <group id="2" label="30111">
-                <setting id="xtream_host" type="string" label="30101" help="30500" default="http://">
+                <setting id="xtream_host" type="string" label="30101" help="30500">
                     <level>0</level>
                     <default>http://</default>
                     <control type="edit" format="string" />
@@ -128,9 +128,9 @@
                     <data>RunScript(script.iptv.xtream-to-m3u, "action=sync_to_pvr")</data>
                     <control type="button" format="action" />
                 </setting>
-                <setting id="refresh_pvr" type="action" label="30305" help="30505">
+                <setting id="reset_pvr" type="action" label="30305" help="30505">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=refresh_pvr")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, "action=reset_pvr")</data>
                     <control type="button" format="action" />
                 </setting>
             </group>

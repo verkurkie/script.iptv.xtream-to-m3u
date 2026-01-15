@@ -3,27 +3,23 @@ import sys
 import xbmcgui
 
 from resources.utils.common import log, system_check
+from resources.utils.setup import first_setup
 from resources.utils.m3u_utils import make_playlist
 from resources.utils.pvr_utils import (
-    refresh_pvr,
+    reset_pvr,
     setup_pvr,
     sync_to_pvr,
     select_pvr_instance,
 )
 from resources.utils.xtream_utils import select_categories
-from resources.utils.provider_utils import (
-    get_live_categories,
-    get_live_streams,
-    test_provider,
-)
+from resources.utils.provider_utils import test_provider, get_iptv_data
 
 # Initialize the addon object
 ADDON = xbmcaddon.Addon()
 
 
 def main():
-    log("XTREAM-TO-M3U - SCRIPT STARTED")
-    log(f"Arguments received: {str(sys.argv)}")
+    log(f"XTREAM-TO-M3U - SCRIPT STARTED - arguments: [{str(sys.argv)}]")
 
     # Parse arguments into a dictionary
     # Supports "RunScript(script.id, action=name, param=value)"
@@ -39,6 +35,11 @@ def main():
 
     action = params.get("action")
 
+    first_setup_result = first_setup()
+
+    if not first_setup_result:
+        return
+
     if action == "system_checks":
         # Provide the user with system status dialog
         system_check()
@@ -53,25 +54,18 @@ def main():
         # Also gets the version of the addon and updates the UI
         setup_pvr()
     elif action == "get_iptv_data":
-        # Fetches Channel Categories and Channels from the IPTV Provider
-        xbmcgui.Dialog().notification(
-            "Xtream to M3U", "Fetching Categories and Streams ..."
-        )
-        get_live_categories()
-        get_live_streams()
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U", "Categories and Streams fetched successfully"
-        )
-    elif action == "refresh_pvr":
+        # Fetches Channel Categories and Channels from the IPTV Provider (force=True overwrites existing data)
+        get_iptv_data(force=True)
+    elif action == "reset_pvr":
         # Refreshes the user's PVR instance - can also be called by itself (i.e. keyboard shortcut)
         pvr_instance_id = params.get("pvr_instance_id", None)
-        refresh_pvr(pvr_instance_id=pvr_instance_id, silent=False)
+        reset_pvr(pvr_instance_id=pvr_instance_id, silent=False)
     elif action == "select_pvr_instance":
         # User selection of IPTV Simple Client instance
         select_pvr_instance()
     elif action == "make_playlist":
         # Configure the IPTV Simple Client instance with the playlist and EPG link
-        make_playlist()
+        make_playlist(silent=False)
     elif action == "sync_to_pvr":
         # Configure the IPTV Simple Client instance with the playlist and EPG link
         sync_to_pvr()
