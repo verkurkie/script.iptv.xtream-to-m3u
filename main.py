@@ -2,6 +2,7 @@ import xbmcaddon
 import sys
 import xbmcgui
 
+from resources.utils.cron_utils import get_job, manage_job
 from resources.utils.common import log, system_check
 from resources.utils.setup import first_setup
 from resources.utils.m3u_utils import make_playlist
@@ -34,12 +35,20 @@ def main():
                 params["action"] = arg
 
     action = params.get("action")
+    old_cron = ADDON.getSettingString("auto_refresh")
 
     first_setup_result = first_setup()
 
     if not first_setup_result:
         return
 
+    if action == "auto_refresh":
+        # Run the scheduled refresh (called by cron job)
+        log("[cron_main] Starting cron job - auto_refresh")
+        # Call sync_to_pvr - this will also call [make_playlist] and [get_iptv_data]
+        sync_to_pvr(cron=True)
+        log("[cron_main] Finished cron job - auto_refresh")
+        return
     if action == "system_checks":
         # Provide the user with system status dialog
         system_check()
@@ -73,6 +82,13 @@ def main():
         # Default behavior: open settings if no specific action
         ADDON.openSettings()
 
+    # Final actions go here
+    new_cron = ADDON.getSettingString("auto_refresh")
+    if old_cron != new_cron:
+        # Cron value has changed - update the cron job!
+        manage_job(new_cron)
+
+    return
 
 if __name__ == "__main__":
     main()

@@ -89,6 +89,15 @@ msgctxt "#30204"
 msgid "Strip country prefixes from channel names"
 msgstr "Strip country prefixes from channel names"
 
+# ----- Auto refresh
+msgctxt "#30212"
+msgid "Auto refresh"
+msgstr "Auto refresh"
+
+msgctxt "#30205"
+msgid "Auto refresh categories and channels"
+msgstr "Auto refresh categories and channels"
+
 # ===================================================================
 # ----- 300 - Actions
 # ===================================================================
@@ -198,3 +207,7 @@ msgstr "Fetches Channel Categories and Channels from the IPTV Provider - if chan
 msgctxt "#30511"
 msgid "Test connection to the IPTV Provider - if changes were made, click OK to save details first and then return to this screen"
 msgstr "Test connection to the IPTV Provider - if changes were made, click OK to save details first and then return to this screen"
+
+msgctxt "#30512"
+msgid "Choose an interval to auto-refresh your Live Categories and Channels. This also updates your playlist and syncs to PVR."
+msgstr "Choose an interval to auto-refresh your Live Categories and Channels. This also updates your playlist and syncs to PVR."

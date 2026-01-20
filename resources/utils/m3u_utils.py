@@ -76,7 +76,7 @@ class M3uItem:
         return isvalid
 
 
-def make_playlist(final_ids=None, silent=True):
+def make_playlist(final_ids=None, silent=True, cron=False):
     user_categories_ids = (
         ",".join(map(str, final_ids))
         if final_ids
@@ -89,10 +89,11 @@ def make_playlist(final_ids=None, silent=True):
     )
 
     if not selected_id_set:
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U",
-            "No categories selected.\nPlease select at least one category first.",
-        )
+        if not silent:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "No categories selected.\nPlease select at least one category first.",
+            )
         log("[make_playlist] no categories selected. aborting.")
         return False
 
@@ -100,7 +101,7 @@ def make_playlist(final_ids=None, silent=True):
     if final_ids:
         log(f"[make_playlist] using final_ids: {','.join(map(str, final_ids))}")
 
-    live_categories, live_streams = get_iptv_data()
+    live_categories, live_streams = get_iptv_data(force=cron, cron=cron)
 
     if not live_categories or not live_streams:
         return False

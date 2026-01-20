@@ -36,53 +36,50 @@ def test_provider(dialog=False):
         return json.loads(data)
 
 
-def get_iptv_data(force=False):
+def get_iptv_data(force=False, cron=False):
     success = False
 
-    xbmcgui.Dialog().notification(
-        "Xtream to M3U",
-        "Fetching live categories & streams...",
-        time=500,
-        sound=False,
-    )
+    if not cron:
+        xbmcgui.Dialog().notification(
+            "Xtream to M3U",
+            "Fetching live categories & streams...",
+            time=500,
+            sound=False,
+        )
 
     user_profile_path = xbmcvfs.translatePath(ADDON.getAddonInfo("profile"))
     live_categories_path = os.path.join(user_profile_path, "live_categories.json")
     live_streams_path = os.path.join(user_profile_path, "live_streams.json")
 
-    with busy_dialog("get_iptv_data"):
-        if not force:
-            live_categories = (
-                json.load(xbmcvfs.File(live_categories_path))
-                if xbmcvfs.exists(live_categories_path)
-                else get_live_categories()
-            )
-        else:
-            live_categories = get_live_categories()
+    with busy_dialog(active=not cron):
+        live_categories = (
+            json.load(xbmcvfs.File(live_categories_path))
+            if not force and xbmcvfs.exists(live_categories_path)
+            else get_live_categories()
+        )
 
         if live_categories:
-            if not force:
-                live_streams = (
-                    json.load(xbmcvfs.File(live_streams_path))
-                    if xbmcvfs.exists(live_streams_path)
-                    else get_live_streams()
-                )
-            else:
-                live_streams = get_live_streams()
+            live_streams = (
+                json.load(xbmcvfs.File(live_streams_path))
+                if not force and xbmcvfs.exists(live_streams_path)
+                else get_live_streams()
+            )
 
-            if live_streams:
-                success = True
+    if live_streams:
+        success = True
 
     if success:
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U",
-            "Successfully fetched [{}] Categories and [{}] Streams".format(
-                len(live_categories), len(live_streams)
-            ),
-        )
+        if not cron:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "Successfully fetched [{}] Categories and [{}] Streams".format(
+                    len(live_categories), len(live_streams)
+                ),
+            )
         return live_categories, live_streams
     else:
-        xbmcgui.Dialog().ok("Xtream to M3U", "Failed to fetch Categories and Streams")
+        if not cron:
+            xbmcgui.Dialog().ok("Xtream to M3U", "Failed to fetch Categories and Streams")
         return None, None
 
 
@@ -119,7 +116,7 @@ def get_live_categories():
 
 def get_live_streams():
     try:
-        raw_data = make_request(api_action="get_live_streams", timeout=30)
+        raw_data = make_request(api_action="get_live_streams", timeout=60)
 
         # Parse JSON and count items
         streams = json.loads(raw_data)

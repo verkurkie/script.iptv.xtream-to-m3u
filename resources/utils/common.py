@@ -27,13 +27,15 @@ def log(message, level=xbmc.LOGINFO):
 
 
 @contextmanager
-def busy_dialog(caller=None):
-    xbmc.executebuiltin("ActivateWindow(busydialognocancel)")
-    try:
+def busy_dialog(caller=None, active=True):
+    if active:
+        xbmc.executebuiltin("ActivateWindow(busydialognocancel)")
+        try:
+            yield
+        finally:
+            xbmc.executebuiltin("Dialog.Close(busydialognocancel)")
+    else:
         yield
-    finally:
-        xbmc.executebuiltin("Dialog.Close(busydialognocancel)")
-
 
 def get_setting(key, window=True):
     """

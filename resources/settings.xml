@@ -4,7 +4,7 @@
             <group id="1" label="30110">
                 <setting id="select_pvr_instance" type="action" label="30105">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=select_pvr_instance")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=select_pvr_instance)</data>
                     <control type="button" format="action" />
                 </setting>
                 <setting id="pvr_instance_name" type="string" label="30106">
@@ -61,16 +61,16 @@
                 </setting>
                 <setting id="test_provider" type="action" label="30109" help="30511">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=test_provider")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=test_provider)</data>
                     <control type="button" format="action" />
                 </setting>
             </group>
         </category>
         <category id="cat_filters" label="30200">
-            <group id="3" label="30210">
+            <group id="1" label="30210">
                 <setting id="select_categories_btn" type="action" label="30201" help="30501">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=select_categories")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=select_categories)</data>
                     <control type="button" format="action" />
                 </setting>
                 <setting id="user_categories_ids" type="string" label="30202">
@@ -82,7 +82,7 @@
                     <control type="edit" format="string" />
                 </setting>
             </group>
-            <group id="1" label="30211">
+            <group id="2" label="30211">
                 <setting id="exclude_prefixes" type="string" label="30203" help="30507">
                     <level>0</level>
                     <constraints>
@@ -96,41 +96,56 @@
                     <control type="toggle" />
                 </setting>
             </group>
+            <group id="3" label="30212">
+                <setting id="auto_refresh" type="string" label="30205" help="">
+                    <level>0</level>
+                    <default>off</default>
+                    <constraints>
+                        <options>
+                            <option>off</option>
+                            <option>daily</option>
+                            <option>weekly</option>
+                            <option>monthly</option>
+                        </options>
+                    </constraints>
+                    <control type="list" format="string" />
+                </setting>
+            </group>
         </category>
         <category id="cat_actions" label="30300">
             <group id="1" label="30310">
                 <setting id="system_checks" type="action" label="30301">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=system_checks")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=system_checks)</data>
                     <control type="button" format="action" />
                 </setting>
             </group>
             <group id="2" label="30311">
                 <setting id="get_iptv_data" type="action" label="30308" help="30510">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=get_iptv_data")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=get_iptv_data)</data>
                     <control type="button" format="action" />
                 </setting>
                 <setting id="make_playlist" type="action" label="30306">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=make_playlist")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=make_playlist)</data>
                     <control type="button" format="action" />
                 </setting>
             </group>
             <group id="3" label="30312">
                 <setting id="setup_pvr" type="action" label="30302" help="30502">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=setup_pvr")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=setup_pvr)</data>
                     <control type="button" format="action" />
                 </setting>
                 <setting id="sync_to_pvr" type="action" label="30304" help="30504">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=sync_to_pvr")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=sync_to_pvr)</data>
                     <control type="button" format="action" />
                 </setting>
                 <setting id="reset_pvr" type="action" label="30305" help="30505">
                     <level>0</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, "action=reset_pvr")</data>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=reset_pvr)</data>
                     <control type="button" format="action" />
                 </setting>
             </group>

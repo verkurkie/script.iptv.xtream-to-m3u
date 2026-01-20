@@ -277,7 +277,7 @@ def select_pvr_instance(sync=True):
     return selected
 
 
-def sync_to_pvr():
+def sync_to_pvr(cron=False):
     """Updates the targeted PVR instance XML with M3U and EPG details."""
     if not check_pvr():
         return
@@ -289,32 +289,36 @@ def sync_to_pvr():
         password = get_setting("password")
 
         if not user or not password:
-            xbmcgui.Dialog().ok(
-                "Xtream to M3U",
-                "No credentials found.\nPlease enter & save your IPTV Provider credentials first.",
-            )
+            if not cron:
+                xbmcgui.Dialog().ok(
+                    "Xtream to M3U",
+                    "No credentials found.\nPlease enter & save your IPTV Provider credentials first.",
+                )
             return
 
-        if not make_playlist():
+        if not make_playlist(cron=cron):
             return
 
         pvr_instance_id, pvr_instance_name, xml_content = get_pvr_instance_info()
 
         if not xml_content:
-            xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
+            if not cron:
+                xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
             return
 
         user_categories_ids = get_setting("user_categories_ids")
 
         if not user_categories_ids or user_categories_ids.strip() == "":
-            xbmcgui.Dialog().ok(
-                "Xtream to M3U",
-                "No categories selected.\nPlease select at least one category first.",
-            )
+            if not cron:
+                xbmcgui.Dialog().ok(
+                    "Xtream to M3U",
+                    "No categories selected.\nPlease select at least one category first.",
+                )
             log("[sync_to_pvr] no categories selected. Aborting...")
             return
 
-        xbmcgui.Dialog().notification("Xtream to M3U", "Syncing to PVR...")
+        if not cron:
+            xbmcgui.Dialog().notification("Xtream to M3U", "Syncing to PVR...")
 
         # Prepare values
         m3u_url = get_m3u_file_path()
@@ -365,10 +369,11 @@ def sync_to_pvr():
         # Trigger PVR reload
         reset_pvr(silent=True)
 
-        xbmcgui.Dialog().ok(
-            "Xtream to M3U",
-            f"Configuration synced successfully to:\n{pvr_instance_name}\n\nPVR reload triggered.",
-        )
+        if not cron:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                f"Configuration synced successfully to:\n{pvr_instance_name}\n\nPVR reload triggered.",
+            )
 
     except Exception as e:
         log(f"[sync_to_pvr] unexpected error: {str(e)}", xbmc.LOGERROR)
