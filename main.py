@@ -1,9 +1,9 @@
 import xbmcaddon
 import sys
-import xbmcgui
 
-from resources.utils.cron_utils import get_job, manage_job
-from resources.utils.common import log, system_check
+from resources.utils.cron_utils import manage_job
+from resources.utils.common import log
+from resources.utils.system_check import system_check
 from resources.utils.setup import first_setup
 from resources.utils.m3u_utils import make_playlist
 from resources.utils.pvr_utils import (
