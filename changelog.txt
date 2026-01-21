@@ -1,3 +1,6 @@
+v1.1.2
+- refactor: update system status check with cron job info
+
 v1.1.1
 - fix: remove dependecy versions info
 
