@@ -74,4 +74,8 @@ jobs:
           token: ${{ secrets.PAT_GITHUB }}
           repository: verkurkie/repository.verkurkie
           event-type: submodule-update
-          client-payload: '{"new_version": "${{ steps.semantic.outputs.version }}", "repo_name": "${{ github.event.repository.name }}"}'
+          client-payload: >
+            {
+              "new_version": "${{ steps.semantic.outputs.released == 'true' && steps.semantic.outputs.version || '' }}",
+              "repo_name": "${{ github.event.repository.name }}"
+            }
