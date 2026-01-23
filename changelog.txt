@@ -1,3 +1,8 @@
+v1.1.3
+- fix: status check runs into error when cron job is not present
+- ci: only set 'new_version' if there was a version bump
+- ci: add trigger to run remote repository workflow
+
 v1.1.2
 - refactor: update system status check with cron job info
 
