@@ -196,12 +196,13 @@ def system_check():
         is_enabled = addon_data.get("enabled", False)
         cron_version = addon_data.get("version", "")
         add_line("Cron For Kodi", "ok" if is_enabled else "error", f"Installed (v{cron_version})")
+
         job = get_job() if is_enabled else None
         auto_refresh = get_setting("auto_refresh")
         add_line(
             "Cron job",
             "ok" if job else "error",
-            f"{job.name} [{auto_refresh}][{job.expression}]\n",
+            f"{job.name} [{auto_refresh}][{job.expression}]\n" if job else "not found",
         )
     except RuntimeError:
         add_line("Cron For Kodi", "error", "Not installed\n")
