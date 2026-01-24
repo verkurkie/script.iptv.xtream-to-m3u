@@ -146,16 +146,28 @@ def make_playlist(final_ids=None, silent=True, cron=False):
 
         stream_icon = channel.get("stream_icon", "")
         epg_channel_id = channel.get("epg_channel_id", "")
-
+        tv_archive = channel.get("tv_archive", "")
+        tv_archive_duration = channel.get("tv_archive_duration", "")
         group_title = category_map.get(category_id, "Unknown")
+
+        # Build the extras string based on catchup support
+        catchup_tags = ""
+        # tv_archive is usually an integer 1 or 0, or string "1"/"0"
+        if str(tv_archive) == "1":
+            catchup_tags += 'catchup="default"'
+            if tv_archive_duration:
+                catchup_tags += f' catchup-days="{tv_archive_duration}"'
+
         # Create a new M3uItem object and add it to the list
         m3u_string = (
             f'EXTINF:-1 tvg-id="{epg_channel_id}" '
             f'tvg-name="{tvg_name}" '
             f'tvg-logo="{stream_icon}" '
+            f'{catchup_tags} '
             f'group-title="{group_title}",'
             f"{tvg_name}"
         )
+
         m3u_entry = M3uItem(m3u_string)
         m3u_entry.url = (
             f"{iptv_host}:{iptv_port}/"

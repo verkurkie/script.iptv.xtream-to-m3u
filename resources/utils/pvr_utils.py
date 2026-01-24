@@ -279,6 +279,9 @@ def select_pvr_instance(sync=True):
 
 def sync_to_pvr(cron=False):
     """Updates the targeted PVR instance XML with M3U and EPG details."""
+    if cron:
+        log("[cron_main] Starting cron job - auto_refresh")
+
     if not check_pvr():
         return
 
@@ -363,6 +366,10 @@ def sync_to_pvr(cron=False):
 
         # Other settings - Disable M3U playlist cache to ensure fresh loads
         xml_content = update_xml_setting(xml_content, "m3uCache", "false")
+        xml_content = update_xml_setting(xml_content, "catchupEnabled", "true")
+        xml_content = update_xml_setting(xml_content, "allChannelsCatchupMode", "5")
+        xml_content = update_xml_setting(xml_content, "catchupOverrideMode", "1")
+        xml_content = update_xml_setting(xml_content, "catchupOnlyOnFinishedProgrammes", "false")
 
         set_pvr_instance_xml(pvr_instance_id, xml_content)
 
@@ -374,10 +381,13 @@ def sync_to_pvr(cron=False):
                 "Xtream to M3U",
                 f"Configuration synced successfully to:\n{pvr_instance_name}\n\nPVR reload triggered.",
             )
+        else:
+            log("[cron_main] Finished cron job - auto_refresh")
 
     except Exception as e:
         log(f"[sync_to_pvr] unexpected error: {str(e)}", xbmc.LOGERROR)
-        xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
+        if not cron:
+            xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
 
 
 def get_pvr_instance_info(pvr_instance_id=None):

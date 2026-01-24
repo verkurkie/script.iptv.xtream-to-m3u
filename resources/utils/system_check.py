@@ -23,7 +23,11 @@ def system_check():
 
     # Helper to add colored lines (colors only the status tag)
     def add_line(label, status="ok", detail=""):
-        color = "green" if status == "ok" else "red"
+        color = {
+            "ok": "green",
+            "warn": "yellow",
+            "error": "red",
+        }.get(status, "white") # Defaults to "white" if status is unknown
 
         # Color only the status part, wrapped in brackets for visibility
         colored_status = f"[[COLOR {color}]{status.upper()}[/COLOR]]"
@@ -39,16 +43,27 @@ def system_check():
     status = user_info.get("status", "Unknown")
     expiry = user_info.get("exp_date", None)
 
-    # Format expiry (Xtream uses unix timestamp)
-    if expiry:
-        expiry_str = datetime.fromtimestamp(int(expiry)).strftime("%Y-%m-%d")
+    # Format expiry and determine status tag
+    status_tag = "error"
+    if status == "Active" and expiry:
+        exp_dt = datetime.fromtimestamp(int(expiry))
+        expiry_str = exp_dt.strftime("%Y-%m-%d")
+        days_left = (exp_dt - datetime.now()).days
+
+        if days_left < 0:
+            status_tag = "error"  # Already expired
+        elif days_left <= 14:
+            status_tag = "warn"   # Expiring soon
+        else:
+            status_tag = "ok"
     else:
         expiry_str = "N/A"
+        status_tag = "error"
 
     add_line(
         "Account status",
-        "ok" if status == "Active" else "error",
-        f"Expiry: {expiry_str}\n",
+        status_tag,
+        f"{status} (expires: {expiry_str})\n",
     )
 
     # Live categories & streams
@@ -201,8 +216,8 @@ def system_check():
         auto_refresh = get_setting("auto_refresh")
         add_line(
             "Cron job",
-            "ok" if job else "error",
-            f"{job.name} [{auto_refresh}][{job.expression}]\n" if job else "not found",
+            "ok" if job else "warn",
+            f"{job.name} [{auto_refresh}][{job.expression}]\n" if job else "OFF",
         )
     except RuntimeError:
         add_line("Cron For Kodi", "error", "Not installed\n")

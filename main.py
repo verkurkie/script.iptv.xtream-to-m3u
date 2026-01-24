@@ -42,42 +42,23 @@ def main():
     if not first_setup_result:
         return
 
-    if action == "auto_refresh":
-        # Run the scheduled refresh (called by cron job)
-        log("[cron_main] Starting cron job - auto_refresh")
-        # Call sync_to_pvr - this will also call [make_playlist] and [get_iptv_data]
-        sync_to_pvr(cron=True)
-        log("[cron_main] Finished cron job - auto_refresh")
-        return
-    if action == "system_checks":
-        # Provide the user with system status dialog
-        system_check()
-    if action == "test_provider":
-        # Provide the user with system status dialog
-        test_provider(dialog=True)
-    elif action == "select_categories":
-        # Dialog for the user to select desired TV categories
-        select_categories()
-    elif action == "setup_pvr":
-        # Checks if IPTV Simple Client is installed & enabled and will install/enable it if not
-        # Also gets the version of the addon and updates the UI
-        setup_pvr()
-    elif action == "get_iptv_data":
-        # Fetches Channel Categories and Channels from the IPTV Provider (force=True overwrites existing data)
-        get_iptv_data(force=True)
-    elif action == "reset_pvr":
-        # Refreshes the user's PVR instance - can also be called by itself (i.e. keyboard shortcut)
-        pvr_instance_id = params.get("pvr_instance_id", None)
-        reset_pvr(pvr_instance_id=pvr_instance_id, silent=False)
-    elif action == "select_pvr_instance":
-        # User selection of IPTV Simple Client instance
-        select_pvr_instance()
-    elif action == "make_playlist":
-        # Configure the IPTV Simple Client instance with the playlist and EPG link
-        make_playlist(silent=False)
-    elif action == "sync_to_pvr":
-        # Configure the IPTV Simple Client instance with the playlist and EPG link
-        sync_to_pvr()
+    # Mapping actions to their corresponding functions
+    actions = {
+        "auto_refresh": lambda: sync_to_pvr(cron=True),
+        "system_checks": system_check,
+        "test_provider": lambda: test_provider(dialog=True),
+        "select_categories": select_categories,
+        "setup_pvr": setup_pvr,
+        "get_iptv_data": lambda: get_iptv_data(force=True),
+        "reset_pvr": lambda: reset_pvr(pvr_instance_id=params.get("pvr_instance_id"), silent=False),
+        "select_pvr_instance": select_pvr_instance,
+        "make_playlist": lambda: make_playlist(silent=False),
+        "sync_to_pvr": sync_to_pvr,
+    }
+
+    # Execute the action if it exists, otherwise open settings
+    if action in actions:
+        actions[action]()
     else:
         # Default behavior: open settings if no specific action
         ADDON.openSettings()
