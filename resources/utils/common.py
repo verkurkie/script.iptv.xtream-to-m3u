@@ -7,8 +7,70 @@ import xbmcvfs
 import urllib.request
 from contextlib import contextmanager
 import threading
+import sqlite3
 
 ADDON = xbmcaddon.Addon()
+
+
+def db_exec(db_name=None, query="", params=None):
+    if params is None:
+        params = ()
+    elif not isinstance(params, (tuple, list)):
+        # Automatically wrap single values in a tuple for sqlite3
+        params = (params,)
+
+    # Safety check: Match '?' placeholders with param count
+    placeholder_count = query.count("?")
+    if placeholder_count != len(params):
+        log(f"[db_exec] Parameter mismatch: Query has {placeholder_count} placeholders but {len(params)} params were provided.", xbmc.LOGERROR)
+        return None
+
+    db_dir = xbmcvfs.translatePath("special://profile/Database/")
+    
+    # 1. Regex to match the DB name (case-insensitive)
+    pattern = re.compile(f"^{db_name}.*\\.db$", re.IGNORECASE)
+    
+    # 2. List and SORT the files so the highest number (latest version) is at the end
+    try:
+        files = [f for f in os.listdir(db_dir) if pattern.match(f)]
+        files.sort() # Alphabetical sort: TV45.db, TV46.db...
+    except Exception as e:
+        log(f"[db_exec] Error listing directory {db_dir}: {str(e)}", xbmc.LOGERROR)
+        return None
+
+    if not files:
+        log(f"[db_exec] No database file found for name [{db_name}]", xbmc.LOGERROR)
+        return None
+
+    path = os.path.join(db_dir, files[-1])
+
+    try:
+        # Use 'with' for the connection to handle transactions
+        with sqlite3.connect(path) as conn:
+            conn.set_trace_callback(log)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute(query, params)
+            conn.set_trace_callback(None)
+
+            # If it's a SELECT query, return the results
+            if query.strip().upper().startswith("SELECT"):
+                log("[db_exec] Fetching data from DB...")
+                rows = cursor.fetchall()
+                if rows:
+                    return [dict(row) for row in rows]
+                else:
+                    log("[db_exec] No data to return for SELECT...")
+                    return []
+            
+            # For DELETE/UPDATE/INSERT, commit is handled by the 'with' block
+            conn.commit()
+            log(f"[db_exec] Query executed. Affected rows: {cursor.rowcount}")
+            return cursor.rowcount
+
+    except Exception as e:
+        log(f"[db_exec] Error executing query on {path}: {str(e)}", xbmc.LOGERROR)
+        return None
 
 
 def log(message, level=xbmc.LOGINFO):

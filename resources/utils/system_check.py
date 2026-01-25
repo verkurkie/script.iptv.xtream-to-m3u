@@ -15,14 +15,8 @@ def system_check():
     # Create a human-readable report for the text viewer
     report = []
 
-    # Header
-    report.append("=" * 30)
-    report.append("SYSTEM STATUS REPORT")
-    report.append("=" * 30)
-    report.append("")
-
     # Helper to add colored lines (colors only the status tag)
-    def add_line(label, status="ok", detail=""):
+    def add_line(label, status="ok", detail=None):
         color = {
             "ok": "green",
             "warn": "yellow",
@@ -30,11 +24,13 @@ def system_check():
         }.get(status, "white") # Defaults to "white" if status is unknown
 
         # Color only the status part, wrapped in brackets for visibility
-        colored_status = f"[[COLOR {color}]{status.upper()}[/COLOR]]"
+        colored_status = f"[[COLOR {color}]{status.upper()}[/COLOR]]" if status else "\n==="
 
         # Use a simpler layout that works better with proportional fonts
-        report.append(f"{colored_status} {label}: {detail}")
+        report.append(f"{colored_status} {label}: {detail or '==='}")
 
+    # IPTV Provicer info
+    add_line("IPTV Info", None)
     log("[system check] checking IPTV Provider...")
     from .provider_utils import test_provider
 
@@ -44,8 +40,9 @@ def system_check():
     expiry = user_info.get("exp_date", None)
 
     # Format expiry and determine status tag
+    # Format expiry and determine status tag
     status_tag = "error"
-    if status == "Active" and expiry:
+    if expiry:
         exp_dt = datetime.fromtimestamp(int(expiry))
         expiry_str = exp_dt.strftime("%Y-%m-%d")
         days_left = (exp_dt - datetime.now()).days
@@ -61,9 +58,9 @@ def system_check():
         status_tag = "error"
 
     add_line(
-        "Account status",
+        "IPTV Provider status",
         status_tag,
-        f"{status} (expires: {expiry_str})\n",
+        f"{status} (expires: {expiry_str})" if expiry else "Check failed! Try again?",
     )
 
     # Live categories & streams
@@ -129,10 +126,11 @@ def system_check():
     add_line(
         label="User Categories",
         status="ok" if user_category_count > 0 else "error",
-        detail=f"{user_category_count} selected\n",
+        detail=f"{user_category_count} selected",
     )
 
     # IPTV Simple Client status
+    add_line("PVR Info", None)
     log("[system check] checking PVR status...")
     try:
         # We use xbmcaddon.Addon just to check if it exists in the system
@@ -160,12 +158,13 @@ def system_check():
         add_line(
             "PVR Instance",
             "ok" if get_setting("pvr_instance_id") != "" else "error",
-            f"{get_setting('pvr_instance_name')} (ID:{get_setting('pvr_instance_id')})\n",
+            f"{get_setting('pvr_instance_name')} (ID:{get_setting('pvr_instance_id')})",
         )
     except RuntimeError:
-        add_line("PVR Client", "error", "Not installed\n")
+        add_line("PVR Client", "error", "Not installed")
 
     # Playlist status
+    add_line("M3U Info", None)
     log("[system check] checking playlist status...")
     m3u_file_path = get_m3u_file_path()
 
@@ -185,12 +184,13 @@ def system_check():
         add_line(
             "Playlist",
             "ok",
-            f"{channel_count} channels ({datetime.fromtimestamp(last_modified).strftime('%Y-%m-%d %H:%M:%S')})\n",
+            f"{channel_count} channels ({datetime.fromtimestamp(last_modified).strftime('%Y-%m-%d %H:%M:%S')})",
         )
     else:
-        add_line("Playlist", "error", "Count: 0\n")
+        add_line("Playlist", "error", "Count: 0")
 
     # CRON Job status
+    add_line("Auto refresh Info", None)
     log("[system check] checking CRON job status...")
     try:
         # Check if it's enabled via JSON-RPC (and get version)
@@ -217,15 +217,13 @@ def system_check():
         add_line(
             "Cron job",
             "ok" if job else "warn",
-            f"{job.name} [{auto_refresh}][{job.expression}]\n" if job else "OFF",
+            f"{job.name} [{auto_refresh}][{job.expression}]" if job else "OFF",
         )
     except RuntimeError:
-        add_line("Cron For Kodi", "error", "Not installed\n")
+        add_line("Cron For Kodi", "error", "Not installed")
 
     # Footer
-    report.append("-" * 30)
-    report.append("Addon settings:")
-    report.append(f"{'-' * 30}\n")
+    add_line("Addon settings", None)
 
     # Dump Settings
     settings_dump = {
@@ -246,4 +244,4 @@ def system_check():
     report_str = "\n".join(report)
 
     # Show results in a proper scrollable text viewer
-    xbmcgui.Dialog().textviewer("System Status Report", report_str, True)
+    xbmcgui.Dialog().textviewer(f"Addon Status - v{ADDON.getAddonInfo('version')}", report_str, True)

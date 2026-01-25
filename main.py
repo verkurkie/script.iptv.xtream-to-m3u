@@ -2,6 +2,7 @@ import xbmcaddon
 import sys
 
 from resources.utils.cron_utils import manage_job
+from resources.utils.favorites import sync_favorites
 from resources.utils.common import log
 from resources.utils.system_check import system_check
 from resources.utils.setup import first_setup
@@ -54,6 +55,7 @@ def main():
         "select_pvr_instance": select_pvr_instance,
         "make_playlist": lambda: make_playlist(silent=False),
         "sync_to_pvr": sync_to_pvr,
+        "sync_favorites": sync_favorites,
     }
 
     # Execute the action if it exists, otherwise open settings

@@ -150,5 +150,15 @@
                 </setting>
             </group>
         </category>
+        <!-- Advanced -->
+        <category id="cat_advanced" label="30400">
+            <group id="1" label="30410">
+                <setting id="sync_favorites" type="action" label="30401" help="30513">
+                    <level>2</level>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=sync_favorites)</data>
+                    <control type="button" format="action" />
+                </setting>
+            </group>
+        </category>
     </section>
 </settings>

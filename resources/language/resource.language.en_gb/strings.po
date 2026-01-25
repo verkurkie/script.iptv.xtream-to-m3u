@@ -158,6 +158,22 @@ msgid "Test action"
 msgstr "Test action"
 
 # ===================================================================
+# ----- 400 - Advanced
+# ===================================================================
+msgctxt "#30400"
+msgid "Advanced"
+msgstr "Advanced"
+
+# ----- Advanced features
+msgctxt "#30410"
+msgid "Advanced features"
+msgstr "Advanced features"
+
+msgctxt "#30401"
+msgid "Sync favorites"
+msgstr "Sync favorites"
+
+# ===================================================================
 # 500 - Help texts
 # ===================================================================
 msgctxt "#30500"
@@ -211,3 +227,7 @@ msgstr "Test connection to the IPTV Provider - if changes were made, click OK to
 msgctxt "#30512"
 msgid "Choose an interval to auto-refresh your Live Categories and Channels. This also updates your playlist and syncs to PVR."
 msgstr "Choose an interval to auto-refresh your Live Categories and Channels. This also updates your playlist and syncs to PVR."
+
+msgctxt "#30513"
+msgid "This function looks for channels that were added to the Kodi Favorites and adds them to a PVR Group called 'Favs'"
+msgstr "This function looks for channels that were added to the Kodi Favorites and adds them to a PVR Group called 'Favs'"
