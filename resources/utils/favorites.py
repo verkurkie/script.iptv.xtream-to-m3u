@@ -7,6 +7,29 @@ from .pvr_utils import reset_pvr
 
 GROUP_ADDED = False
 FAVS_ADDED = 0
+FAVS_REMOVED = 0
+
+"""
+TV Database schema:
+- channelgroups
+  - idGroup
+  - isGroupType - 2 is for custom added groups
+  - sName
+  - iClientId - set to -1 for custom groups
+- channels
+  - idChannel - unique table ID
+  - sChannelName
+  - idEpg
+- map_channelgroups_channels
+  - idChannel
+    -> channels.idChannel
+  - idGroup
+    -> channelgroups.idGroup
+  - iChannelNumber
+    -> channels.idEpg
+  - iClientChannelNumber
+    -> channels.idEpg
+"""
 
 def db_get_channelgroup_id():
     global GROUP_ADDED
@@ -35,54 +58,40 @@ def db_get_channelgroup_id():
         return next_group_id
 
 
-def get_matching_channels(fav_titles=None):
-    if fav_titles is None:
-        fav_titles = []
+def get_favorites_db_data(fav_titles=None):
+    if not fav_titles:
+        return [], []
 
-    # Efficiency Step: Get ALL channels from the DB once
-    placeholders = ",".join("?" for _ in fav_titles)
-    query = f"SELECT * FROM channels WHERE sChannelName IN ({placeholders})"
-    db_channels_raw = db_exec("TV", query, tuple(fav_titles))
-    if not db_channels_raw:
-        log("[favorites] No channels found in TV database.", xbmc.LOGWARNING)
-        return
-
-    # Create a lookup dictionary: { "Channel Name": ID }
-    db_channels = {row["sChannelName"]: row for row in db_channels_raw}
-
-    # Find the channels and add them
-    log(f"Checking [{len(fav_titles)}] favorites...")
-    matching_channels = []
-    for channel_title in fav_titles:
-        channel = db_channels.get(channel_title)
-
-        if channel:
-            matching_channels.append(channel)
-
-    return matching_channels
-
-
-def get_new_channels(matching_channels=[]):
-    if len(matching_channels) == 0:
-        return
-
-    # At this point, we have favorites and we can get (or create) the [Favs] group
-    # Get the Favs channelgroup ID
     fav_group_id = db_get_channelgroup_id()
     if not fav_group_id:
-        return
+        return [], []
 
+    # Efficiency Step: Get matching channels and their group status in ONE query
+    placeholders = ",".join("?" for _ in fav_titles)
+    query = f"""
+        SELECT c.*, m.idGroup as groupLink
+        FROM channels c
+        LEFT JOIN map_channelgroups_channels m ON c.idChannel = m.idChannel AND m.idGroup = ?
+        WHERE c.sChannelName IN ({placeholders})
+    """
+    
+    params = [fav_group_id] + fav_titles
+    db_rows = db_exec("TV", query, tuple(params))
+    
+    if not db_rows:
+        log("[favorites] No matching channels found in TV database.")
+        return [], []
+
+    matching_channels = []
     new_channels = []
 
-    for matching_channel in matching_channels:
-        # Check if the channel is already in the Favs group
-        channel_id = matching_channel.get("idChannel")
-        exists = db_exec("TV", "SELECT * FROM map_channelgroups_channels WHERE idGroup = ? AND idChannel = ?", (fav_group_id, channel_id))
+    for row in db_rows:
+        matching_channels.append(row)
+        # If groupLink is None, it means the LEFT JOIN found no entry in the group map
+        if row.get("groupLink") is None:
+            new_channels.append(row)
 
-        if len(exists) == 0:
-            new_channels.append(matching_channel)
-    
-    return new_channels
+    return matching_channels, new_channels
 
 
 def db_add_channels_to_group(new_channels=[]):
@@ -111,6 +120,38 @@ def db_add_channels_to_group(new_channels=[]):
     log(f"[favorites] Batch inserted {len(new_channels)} channels into group {fav_group_id}")
 
 
+def db_cleanup_orphans(fav_titles=None):
+    global FAVS_REMOVED
+    if fav_titles is None:
+        fav_titles = []
+
+    fav_group_id = db_get_channelgroup_id()
+    if not fav_group_id:
+        return
+
+    # Get all channels currently in the Favs group
+    query = """
+        SELECT m.idChannel, c.sChannelName 
+        FROM map_channelgroups_channels m
+        JOIN channels c ON m.idChannel = c.idChannel
+        WHERE m.idGroup = ?
+    """
+    current_favs = db_exec("TV", query, (fav_group_id,))
+    
+    if not current_favs:
+        return
+
+    # Find channels in DB that are NOT in the Kodi favorites list
+    orphans = [row["idChannel"] for row in current_favs if row["sChannelName"] not in fav_titles]
+
+    if orphans:
+        placeholders = ",".join("?" for _ in orphans)
+        delete_query = f"DELETE FROM map_channelgroups_channels WHERE idGroup = ? AND idChannel IN ({placeholders})"
+        db_exec("TV", delete_query, tuple([fav_group_id] + orphans))
+        FAVS_REMOVED = len(orphans)
+        log(f"[favorites] Cleaned up {len(orphans)} orphaned channels from Favs group")
+
+
 def sync_favorites():
     # Get favorites
     rpc_query = {
@@ -133,27 +174,29 @@ def sync_favorites():
         return
 
     num_matching = 0
-    num_new = 0
     if len(favorites) > 0:
         fav_titles = [f.get("title", "Unknown") for f in favorites]
-        matching_channels = get_matching_channels(fav_titles)
-        if len(matching_channels) > 0:
+        log(f"Checking [{len(fav_titles)}] favorites against TV database...")
+        
+        # 1. Add new favorites
+        matching_channels, new_channels = get_favorites_db_data(fav_titles)
+        
+        if matching_channels:
             num_matching = len(matching_channels)
-            new_channels = get_new_channels(matching_channels)
-
-            if len(new_channels) > 0:
-                num_new = len(new_channels)
+            if new_channels:
                 db_add_channels_to_group(new_channels)
             else:
                 log("No new channels to be added to the Favs group")
-        else:
-            log("No matching favorites found")
+        
+        # 2. Cleanup old favorites (reverse check)
+        db_cleanup_orphans(fav_titles)
 
-    if GROUP_ADDED or FAVS_ADDED:
+    if GROUP_ADDED or FAVS_ADDED or FAVS_REMOVED:
         # Trigger reload of PVR
-        xbmcgui.Dialog().ok("Favorites", f"Found [{num_matching}] matching favorites - added [{num_new}]")
+        msg = f"Found [{num_matching}] matching favorites.\nAdded: {FAVS_ADDED} | Removed: {FAVS_REMOVED}"
+        xbmcgui.Dialog().ok("Favorites Sync", msg)
         reset_pvr()
     else:
-        xbmcgui.Dialog().ok("Favorites", f"Found [{num_matching}] matching favorites - already in the Favs group" if num_matching > 0 else "Found no matching favorites")
+        xbmcgui.Dialog().ok("Favorites Sync", "Everything is already in sync!")
 
-    log(f"All done - favs group added: {GROUP_ADDED} - favs added: {FAVS_ADDED}")
+    log(f"All done - group added: {GROUP_ADDED} - added: {FAVS_ADDED} - removed: {FAVS_REMOVED}")
