@@ -14,6 +14,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
+          token: ${{ secrets.PAT_GITHUB }}
           fetch-depth: 0
 
       - name: Set up Python
@@ -79,3 +80,29 @@ jobs:
               "new_version": "${{ steps.semantic.outputs.released == 'true' && steps.semantic.outputs.version || '' }}",
               "repo_name": "${{ github.event.repository.name }}"
             }
+
+# > Run git config user.name github-actions
+#   git config user.name github-actions
+#   git config user.email github-actions@github.com
+#   git add addon.xml changelog.txt
+#   git commit -m "chore: bump version to 1.2.2 [skip ci]"
+#   git push
+#   shell: /usr/bin/bash -e {0}
+#   env:
+#     pythonLocation: /opt/hostedtoolcache/Python/3.14.2/x64
+#     PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.14.2/x64/lib/pkgconfig
+#     Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+#     Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+#     Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.14.2/x64
+#     LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.14.2/x64/lib
+# [main b40419c] chore: bump version to 1.2.2 [skip ci]
+#  2 files changed, 4 insertions(+), 1 deletion(-)
+# remote: error: GH013: Repository rule violations found for refs/heads/main.        
+# remote: Review all repository rules at https://github.com/verkurkie/script.iptv.xtream-to-m3u/rules?ref=refs%2Fheads%2Fmain        
+# remote: 
+# remote: - Changes must be made through a pull request.        
+# remote: 
+# To https://github.com/verkurkie/script.iptv.xtream-to-m3u
+#  ! [remote rejected] main -> main (push declined due to repository rule violations)
+# error: failed to push some refs to 'https://github.com/verkurkie/script.iptv.xtream-to-m3u'
+# Error: Process completed with exit code 1.
