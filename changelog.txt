@@ -1,3 +1,7 @@
+v1.2.2
+- ci: fix permissions issue with version bump step
+- refactor: replace favorites functionality with kodi group manager shortcut
+
 v1.2.1
 - refactor: add cleanup function to the sync favorites action
 
