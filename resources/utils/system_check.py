@@ -34,7 +34,7 @@ def system_check():
     log("[system check] checking IPTV Provider...")
     from .provider_utils import test_provider
 
-    data = test_provider()
+    data = test_provider(silent=True)
     user_info = data.get("user_info", {})
     status = user_info.get("status", "Unknown")
     expiry = user_info.get("exp_date", None)

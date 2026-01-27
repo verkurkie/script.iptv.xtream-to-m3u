@@ -1,9 +1,9 @@
+import xbmc
 import xbmcaddon
 import sys
 
 from resources.utils.cron_utils import manage_job
-from resources.utils.favorites import sync_favorites
-from resources.utils.common import log
+from resources.utils.common import log, check_selected
 from resources.utils.system_check import system_check
 from resources.utils.setup import first_setup
 from resources.utils.m3u_utils import make_playlist
@@ -12,6 +12,7 @@ from resources.utils.pvr_utils import (
     setup_pvr,
     sync_to_pvr,
     select_pvr_instance,
+    config_pvr_client
 )
 from resources.utils.xtream_utils import select_categories
 from resources.utils.provider_utils import test_provider, get_iptv_data
@@ -47,15 +48,16 @@ def main():
     actions = {
         "auto_refresh": lambda: sync_to_pvr(cron=True),
         "system_checks": system_check,
-        "test_provider": lambda: test_provider(dialog=True),
+        "test_provider": test_provider,
         "select_categories": select_categories,
         "setup_pvr": setup_pvr,
         "get_iptv_data": lambda: get_iptv_data(force=True),
-        "reset_pvr": lambda: reset_pvr(pvr_instance_id=params.get("pvr_instance_id"), silent=False),
+        "reset_pvr": lambda: reset_pvr(),
         "select_pvr_instance": select_pvr_instance,
         "make_playlist": lambda: make_playlist(silent=False),
         "sync_to_pvr": sync_to_pvr,
-        "sync_favorites": sync_favorites,
+        "group_manager": lambda: (check_selected() and xbmc.executebuiltin("ActivateWindow(10603)")),
+        "config_pvr_client": config_pvr_client,
     }
 
     # Execute the action if it exists, otherwise open settings

@@ -120,7 +120,7 @@ def set_setting(key, value, addon=True):
     WINDOW = xbmcgui.Window(10000)
     WINDOW.setProperty(f"script.iptv.xtream-to-m3u.{key}", value)
     if addon:
-        ADDON.setSetting(key, value)  # This won't be save until user hits OK button
+        ADDON.getSettings().setString(id=key, value=value) # this saves to settings immediately
 
 
 def make_request(api_action=None, timeout=10):
@@ -207,3 +207,20 @@ def get_m3u_file_path():
 
     m3u_file_path = os.path.join(full_path, f"{pvr_instance_name}.m3u8")
     return m3u_file_path
+
+
+def check_selected(categories=[], cron=False, silent=False):
+    # Use passed categories or fallback to settings/properties
+    user_categories_ids = ",".join(map(str, categories)) if (categories and len(categories) > 0) else get_setting("user_categories_ids")
+
+    if not user_categories_ids or user_categories_ids.strip() == "":
+        if not silent:
+            xbmcgui.Dialog().ok(
+                "Xtream to M3U",
+                "No categories selected.\nPlease select at least one category first.",
+            )
+        log("[reset_pvr] no categories selected. Aborting.")
+        return None
+
+    log(f"User selected categories: [{user_categories_ids}]")
+    return user_categories_ids

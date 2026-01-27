@@ -142,7 +142,7 @@ def select_categories():
 
             # Pass final_ids to reset_pvr to ensure it uses the latest selection!
             pDialog.update(percent=50, message="Updating PVR ...")
-            if reset_pvr(silent=True, categories=",".join(final_ids)):
+            if reset_pvr(silent=True, categories=final_ids):
                 pDialog.close()
                 xbmcgui.Dialog().ok(
                     "Xtream to M3U",

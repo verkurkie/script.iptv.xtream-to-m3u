@@ -8,10 +8,27 @@ import json
 import sqlite3
 import glob
 
-from .common import log, get_setting, set_setting, get_m3u_file_path
+from .common import log, get_setting, set_setting, get_m3u_file_path, check_selected
 from .m3u_utils import make_playlist
 
 ADDON = xbmcaddon.Addon()
+
+
+def config_pvr_client():
+    """Closes current settings (clicks the OK button), opens PVR settings, then re-opens current settings."""
+    # 1. Close our current settings dialog
+    xbmc.executebuiltin('SendClick(10140, 28)')
+    xbmc.sleep(400)  # Short sleep to allow Kodi to process the closure
+
+    # 2. Open PVR settings (this is a blocking call)
+    try:
+        xbmcaddon.Addon('pvr.iptvsimple').openSettings()
+    except Exception as e:
+        log(f"Could not open PVR settings: {e}")
+
+    # 3. Once PVR settings is closed, re-open our addon's settings
+    # We use executebuiltin here so the script can finish terminating
+    xbmc.executebuiltin('Addon.OpenSettings(script.iptv.xtream-to-m3u, 2)')
 
 
 def check_pvr(check_instance=True):
@@ -277,7 +294,7 @@ def select_pvr_instance(sync=True):
     return selected
 
 
-def sync_to_pvr(cron=False):
+def sync_to_pvr(cron=False, silent=False):
     """Updates the targeted PVR instance XML with M3U and EPG details."""
     if cron:
         log("[cron_main] Starting cron job - auto_refresh")
@@ -299,7 +316,7 @@ def sync_to_pvr(cron=False):
                 )
             return
 
-        if not make_playlist(cron=cron):
+        if not make_playlist(cron=cron, silent=silent):
             return
 
         pvr_instance_id, pvr_instance_name, xml_content = get_pvr_instance_info()
@@ -309,15 +326,7 @@ def sync_to_pvr(cron=False):
                 xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
             return
 
-        user_categories_ids = get_setting("user_categories_ids")
-
-        if not user_categories_ids or user_categories_ids.strip() == "":
-            if not cron:
-                xbmcgui.Dialog().ok(
-                    "Xtream to M3U",
-                    "No categories selected.\nPlease select at least one category first.",
-                )
-            log("[sync_to_pvr] no categories selected. Aborting...")
+        if not check_selected(cron=cron):
             return
 
         if not cron:
@@ -326,7 +335,7 @@ def sync_to_pvr(cron=False):
         # Prepare values
         m3u_url = get_m3u_file_path()
         # Build the EPG URL with the username and password and limit the data to the user's selected categories
-        epg_url = f"{host}:{port}/xmltv.php?username={user}&password={password}&categories={user_categories_ids}"
+        epg_url = f"{host}:{port}/xmltv.php?username={user}&password={password}"
 
         # Helper to replace or add settings (handles default="true" attributes and self-closing tags)
         def update_xml_setting(content, setting_id, value):
@@ -460,7 +469,7 @@ def set_pvr_instance_xml(pvr_instance_id=None, xml_content=None):
         f.write(xml_content)
 
 
-def reset_pvr(pvr_instance_id=None, silent=False, categories=None):
+def reset_pvr(pvr_instance_id=None, silent=False, categories=[]):
     """
     Clears channel groups for a specific PVR instance to force a structural reload and
     forces pvr.iptvsimple to reload by toggling it off and on.
@@ -477,18 +486,7 @@ def reset_pvr(pvr_instance_id=None, silent=False, categories=None):
         )
         return False
 
-    # Use passed categories or fallback to settings/properties
-    user_categories_ids = categories
-    if not user_categories_ids:
-        user_categories_ids = get_setting("user_categories_ids")
-
-    if not user_categories_ids or user_categories_ids.strip() == "":
-        if not silent:
-            xbmcgui.Dialog().ok(
-                "Xtream to M3U",
-                "No categories selected.\nPlease select at least one category first.",
-            )
-        log("[reset_pvr] no categories selected. Aborting.")
+    if not check_selected(categories=categories, silent=silent):
         return False
 
     # Database manipulation - removing the channel-groups will cause the PVR toggle (below) to re-process the M3U file

@@ -27,6 +27,10 @@ msgctxt "#30106"
 msgid "Current PVR instance"
 msgstr "Current PVR instance"
 
+msgctxt "#30107"
+msgid "Configure PVR client"
+msgstr "Configure PVR client"
+
 msgctxt "#30108"
 msgid "M3U playlist Path"
 msgstr "M3U playlist Path"
@@ -76,25 +80,29 @@ msgctxt "#30202"
 msgid "Current selection"
 msgstr "Current selection"
 
+msgctxt "#30203"
+msgid "Group Manager"
+msgstr "Group Manager"
+
 # ----- Channel filters
 msgctxt "#30211"
 msgid "Channel filters"
 msgstr "Channel filters"
 
-msgctxt "#30203"
+msgctxt "#30204"
 msgid "Exclude channels starting with"
 msgstr "Exclude channels starting with"
 
-msgctxt "#30204"
-msgid "Strip country prefixes from channel names"
-msgstr "Strip country prefixes from channel names"
+msgctxt "#30205"
+msgid "Strip prefixes from channel names"
+msgstr "Strip prefixes from channel names"
 
 # ----- Auto refresh
 msgctxt "#30212"
 msgid "Auto refresh"
 msgstr "Auto refresh"
 
-msgctxt "#30205"
+msgctxt "#30206"
 msgid "Auto refresh categories and channels"
 msgstr "Auto refresh categories and channels"
 
@@ -170,8 +178,8 @@ msgid "Advanced features"
 msgstr "Advanced features"
 
 msgctxt "#30401"
-msgid "Sync favorites"
-msgstr "Sync favorites"
+msgid "Test action"
+msgstr "Test action"
 
 # ===================================================================
 # 500 - Help texts
@@ -231,3 +239,11 @@ msgstr "Choose an interval to auto-refresh your Live Categories and Channels. Th
 msgctxt "#30513"
 msgid "This function looks for channels that were added to the Kodi Favorites and adds them to a PVR Group called 'Favs'"
 msgstr "This function looks for channels that were added to the Kodi Favorites and adds them to a PVR Group called 'Favs'"
+
+msgctxt "#30514"
+msgid "You can use the Kodi Group Manager to create a channel group like 'Favs' and add channels you use frequently"
+msgstr "You can use the Kodi Group Manager to create a channel group like 'Favs' and add channels you use frequently"
+
+msgctxt "#30515"
+msgid "Opens the IPTV Simple Client config in a new window so you can select & configure your instance"
+msgstr "Opens the IPTV Simple Client config in a new window so you can select & configure your instance"

@@ -10,8 +10,8 @@ from .common import log, busy_dialog, make_request
 ADDON = xbmcaddon.Addon()
 
 
-def test_provider(dialog=False):
-    if dialog:
+def test_provider(silent=False):
+    if not silent:
         xbmcgui.Dialog().notification(
             "IPTV Provider", "Testing connection...", time=500, sound=False
         )
@@ -20,7 +20,7 @@ def test_provider(dialog=False):
         try:
             data = make_request(timeout=5)
 
-            if dialog:
+            if not silent:
                 xbmcgui.Dialog().ok(
                     "IPTV Provider Test passed!", "Connection test was successful!"
                 )
@@ -29,14 +29,14 @@ def test_provider(dialog=False):
             log(
                 f"[test_provider] failed to test IPTV Provider: {str(e)}", xbmc.LOGERROR
             )
-            if dialog:
+            if not silent:
                 xbmcgui.Dialog().ok("IPTV Provider Test failed!", str(e))
             return {"status": "error", "expiry": "0", "user_info": {}}
 
         return json.loads(data)
 
 
-def get_iptv_data(force=False, cron=False):
+def get_iptv_data(force=False, cron=False, silent=False):
     success = False
 
     if not cron:
@@ -69,7 +69,7 @@ def get_iptv_data(force=False, cron=False):
         success = True
 
     if success:
-        if not cron:
+        if not cron and not silent:
             xbmcgui.Dialog().ok(
                 "Xtream to M3U",
                 "Successfully fetched [{}] Categories and [{}] Streams".format(
@@ -78,7 +78,7 @@ def get_iptv_data(force=False, cron=False):
             )
         return live_categories, live_streams
     else:
-        if not cron:
+        if not cron and not silent:
             xbmcgui.Dialog().ok("Xtream to M3U", "Failed to fetch Categories and Streams")
         return None, None
 

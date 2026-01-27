@@ -6,7 +6,7 @@ import xbmcgui
 import xbmcvfs
 import xbmcaddon
 
-from .common import log, get_setting, get_m3u_file_path
+from .common import log, get_setting, get_m3u_file_path, check_selected
 from .provider_utils import get_iptv_data
 
 ADDON = xbmcaddon.Addon()
@@ -77,31 +77,17 @@ class M3uItem:
 
 
 def make_playlist(final_ids=None, silent=True, cron=False):
-    user_categories_ids = (
-        ",".join(map(str, final_ids))
-        if final_ids
-        else get_setting("user_categories_ids")
-    )
-
-    # Create a set from the comma-separated setting string for accurate matching
-    selected_id_set = set(
-        id.strip() for id in user_categories_ids.split(",") if id.strip()
-    )
-
-    if not selected_id_set:
-        if not silent:
-            xbmcgui.Dialog().ok(
-                "Xtream to M3U",
-                "No categories selected.\nPlease select at least one category first.",
-            )
-        log("[make_playlist] no categories selected. aborting.")
+    user_categories_ids = check_selected(categories=final_ids, cron=cron, silent=silent)
+    if not user_categories_ids:
         return False
 
-    # convert the JSON formatted live channels to M3U format
     if final_ids:
         log(f"[make_playlist] using final_ids: {','.join(map(str, final_ids))}")
 
-    live_categories, live_streams = get_iptv_data(force=cron, cron=cron)
+    # Create a set from the comma-separated setting string for accurate matching
+    selected_id_set = set(id.strip() for id in user_categories_ids.split(",") if id.strip())
+
+    live_categories, live_streams = get_iptv_data(force=cron, cron=cron, silent=True)
 
     if not live_categories or not live_streams:
         return False

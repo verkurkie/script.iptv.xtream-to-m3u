@@ -48,7 +48,7 @@ def setup_provider(host, port, user, password):
         return False
 
     # Test the IPTV provider
-    provider_info = test_provider(dialog=True)
+    provider_info = test_provider()
 
     if not provider_info or not provider_info.get("user_info", None):
         return False

@@ -23,6 +23,11 @@
                     </constraints>
                     <control type="edit" format="string" />
                 </setting>
+                <setting id="config_pvt_client" type="action" label="30107" help="">
+                    <level>0</level>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=config_pvr_client)</data>
+                    <control type="button" format="action" />
+                </setting>
                 <setting id="m3u_path" type="path" label="30108" help="30509">
                     <level>0</level>
                     <default>special://home/userdata/playlists</default>
@@ -81,23 +86,28 @@
                     </constraints>
                     <control type="edit" format="string" />
                 </setting>
+                <setting id="group_mgr" type="action" label="30203" help="30514">
+                    <level>0</level>
+                    <data>RunScript(script.iptv.xtream-to-m3u, action=group_manager)</data>
+                    <control type="button" format="action" />
+                </setting>
             </group>
             <group id="2" label="30211">
-                <setting id="exclude_prefixes" type="string" label="30203" help="30507">
+                <setting id="exclude_prefixes" type="string" label="30204" help="30507">
                     <level>0</level>
                     <constraints>
                         <allowempty>true</allowempty>
                     </constraints>
                     <control type="edit" format="string" />
                 </setting>
-                <setting id="strip_prefixes" type="boolean" label="30204" help="30508">
+                <setting id="strip_prefixes" type="boolean" label="30205" help="30508">
                     <level>0</level>
                     <default>false</default>
                     <control type="toggle" />
                 </setting>
             </group>
             <group id="3" label="30212">
-                <setting id="auto_refresh" type="string" label="30205" help="">
+                <setting id="auto_refresh" type="string" label="30206" help="30512">
                     <level>0</level>
                     <default>off</default>
                     <constraints>
@@ -146,16 +156,6 @@
                 <setting id="reset_pvr" type="action" label="30305" help="30505">
                     <level>0</level>
                     <data>RunScript(script.iptv.xtream-to-m3u, action=reset_pvr)</data>
-                    <control type="button" format="action" />
-                </setting>
-            </group>
-        </category>
-        <!-- Advanced -->
-        <category id="cat_advanced" label="30400">
-            <group id="1" label="30410">
-                <setting id="sync_favorites" type="action" label="30401" help="30513">
-                    <level>2</level>
-                    <data>RunScript(script.iptv.xtream-to-m3u, action=sync_favorites)</data>
                     <control type="button" format="action" />
                 </setting>
             </group>
