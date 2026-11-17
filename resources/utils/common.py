@@ -120,7 +120,7 @@ def set_setting(key, value, addon=True):
     WINDOW = xbmcgui.Window(10000)
     WINDOW.setProperty(f"script.iptv.xtream-to-m3u.{key}", value)
     if addon:
-        ADDON.getSettings().setString(id=key, value=value) # this saves to settings immediately
+        ADDON.setSetting(id=key, value=str(value))
 
 
 def make_request(api_action=None, timeout=10):
