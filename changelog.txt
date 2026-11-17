@@ -1,3 +1,6 @@
+v1.2.5
+- fix: update function to fix error when saving settings for the addon
+
 v1.2.4
 - fix: update to fix issues during first-time setup
 
