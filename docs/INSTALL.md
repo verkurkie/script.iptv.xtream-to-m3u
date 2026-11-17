@@ -57,6 +57,8 @@ The process will ask for the following details:
   - Password
 - PVR instance:
   - Select an existing PVR instance in the IPTV Simple Client add-on
+- IPTV categories:
+  - Select at least one category to include in the generated playlist
 
 ![configure](./assets/kodi_addon_first_time_host.png)
 
@@ -69,7 +71,7 @@ The process will ask for the following details:
 
 ##### General -> PVR Instance
 
-Once you have set your credentials and saved them, return to the configuration screen and select a PVR instance to use. This is an existing configuration in the IPTV Simple Client add-on.
+During first-time setup, the add-on asks you to select an existing IPTV Simple Client instance. You can later change it from this setting.
 
 - ℹ️ If IPTV Simple Client is not installed, the addon will ask you to install it.
 
@@ -77,9 +79,9 @@ Once you have set your credentials and saved them, return to the configuration s
 
 ##### General -> Select Categories
 
-After selecting a PVR instance, you can start selecting your desired TV Channel Categories.
+During first-time setup, categories are fetched after selecting a PVR instance. You can select multiple TV channel categories.
 
-- ℹ️ On first run, the add-on will fetch categories from your Xtream IPTV account and display them here. You can select multiple categories to convert to M3U.
+- ℹ️ After setup, use this action to change the selected categories.
 
 - ℹ️ When you select "OK" to save your selection, the add-on will convert your selection to an M3U playlist file and configure it in the IPTV Simple Client instance you selected.
 

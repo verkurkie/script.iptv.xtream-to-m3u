@@ -4,7 +4,8 @@ from urllib.parse import urlparse
 
 from .common import log, get_setting, set_setting
 from .provider_utils import test_provider, get_iptv_data
-from .pvr_utils import select_pvr_instance
+from .pvr_utils import select_pvr_instance, sync_to_pvr
+from .xtream_utils import select_categories
 
 
 def port_check(port):
@@ -56,12 +57,9 @@ def setup_provider(host, port, user, password):
     return True
 
 
-def first_setup(first_try=True):
+def first_setup(first_try=True, force_sync=False):
     """
-    Run some checks to see if this is a first-time setup. If it is, perform the following steps:
-    1. Ask the user for IPTV Provider info (host, port, username, password)
-    2. Ask the user to select a PVR instance (and install IPTV Simple Client if not already installed)
-    3. Fetch IPTV Channel categories & streams
+    Collect any missing provider, PVR instance, or category settings, then sync the PVR.
     """
     # Only get values that are already in the user's addon data
     host = get_setting("xtream_host", window=False) or "http://"
@@ -69,50 +67,77 @@ def first_setup(first_try=True):
     user = get_setting("username", window=False) or None
     password = get_setting("password", window=False) or None
     pvr_instance_id = get_setting("pvr_instance_id", window=False) or None
+    needs_provider = not (host and host != "http://" and port and user and password)
+    needs_pvr_instance = not pvr_instance_id
+    needs_categories = not (
+        get_setting("user_categories_ids", window=False) or ""
+    ).strip()
+
+    if not (needs_provider or needs_pvr_instance or needs_categories or force_sync):
+        return True
+
+    log("[first_setup] starting first-time setup...")
+    if first_try:
+        xbmcgui.Dialog().ok(
+            "First-time Setup",
+            "Please provide the requested info in the next few steps.",
+        )
+
     result = True
+    result_msg = ""
+    provider_updated = False
 
-    if (
-        not host
-        or host == "http://"
-        or not port
-        or not user
-        or not password
-        or not pvr_instance_id
-    ):
-        log("[first_setup] starting first-time setup...")
-        if first_try:
-            xbmcgui.Dialog().ok(
-                "First-time Setup",
-                "Please provide the requested info in the next few steps.",
-            )
-
-        # Ask user for IPTV Provider info using xbmc dialog
-        if not setup_provider(host, port, user, password):
+    if needs_provider:
+        if setup_provider(host, port, user, password):
+            provider_updated = True
+        else:
             result_msg = (
                 "Invalid Xtream info - needs a valid host, port, username and password"
             )
             result = False
+
+    if result and needs_pvr_instance:
+        selected = select_pvr_instance(sync=False)
+        if selected and selected.get("id", None):
+            pvr_instance_id = selected.get("id", None)
+            set_setting("pvr_instance_id", selected.get("id", None))
+            set_setting("pvr_instance_name", selected.get("name", None))
         else:
-            # Ask user for PVR instance info using xbmc dialog
-            selected = select_pvr_instance(sync=False)
-            if selected and selected.get("id", None):
-                pvr_instance_id = selected.get("id", None)
-                set_setting("pvr_instance_id", selected.get("id", None))
-                set_setting("pvr_instance_name", selected.get("name", None))
-            else:
-                result_msg = "No PVR instance selected"
-                result = False
+            result_msg = "No PVR instance selected"
+            result = False
 
-        if not result:
-            log(f"[first_setup] first-time setup failed! {result_msg}", xbmc.LOGERROR)
-            if xbmcgui.Dialog().yesno(
-                "First-time Setup failed!", result_msg + "\n\nDo you want to try again?"
-            ):
-                first_setup(first_try=False)
+    if result and (needs_categories or provider_updated):
+        live_categories, live_streams = get_iptv_data(force=provider_updated)
+        if not live_categories or not live_streams:
+            result_msg = "Failed to fetch IPTV categories and streams"
+            result = False
 
-            return False
+    if result and needs_categories:
+        category_selection = select_categories(update_pvr=False)
+        if not category_selection:
+            result_msg = "No categories selected"
+            result = False
+        elif not category_selection[1]:
+            result_msg = "Failed to save category selection"
+            result = False
+        elif not category_selection[0]:
+            result_msg = "No categories selected"
+            result = False
 
-        # Got all the stuff! Let's get the live categories & streams
-        get_iptv_data()
+    if result and (
+        needs_provider or needs_pvr_instance or needs_categories or force_sync
+    ):
+        if not sync_to_pvr():
+            result_msg = "Failed to configure the selected PVR instance"
+            result = False
+
+    if not result:
+        log(f"[first_setup] first-time setup failed! {result_msg}", xbmc.LOGERROR)
+        if xbmcgui.Dialog().yesno(
+            "First-time Setup failed!", result_msg + "\n\nDo you want to try again?"
+        ):
+            return first_setup(first_try=False, force_sync=True)
+
+        return False
 
     return True

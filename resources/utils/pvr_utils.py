@@ -274,8 +274,7 @@ def select_pvr_instance(sync=True):
     if sel == len(instances):
         new_instance = create_pvr_instance()
         if new_instance:
-            # Recursively call to show the new list (after prompting for restart)
-            select_pvr_instance()
+            return select_pvr_instance(sync=sync)
         return
 
     selected = instances[sel]
@@ -301,7 +300,7 @@ def sync_to_pvr(cron=False, silent=False):
         log("[cron_main] Starting cron job - auto_refresh")
 
     if not check_pvr():
-        return
+        return False
 
     try:
         host = get_setting("xtream_host").rstrip("/")
@@ -315,20 +314,20 @@ def sync_to_pvr(cron=False, silent=False):
                     "Xtream to M3U",
                     "No credentials found.\nPlease enter & save your IPTV Provider credentials first.",
                 )
-            return
+            return False
 
         if not make_playlist(cron=cron, silent=silent):
-            return
+            return False
 
         pvr_instance_id, pvr_instance_name, xml_content = get_pvr_instance_info()
 
         if not xml_content:
             if not cron:
                 xbmcgui.Dialog().ok("Xtream to M3U", "Failed to get PVR instance XML.")
-            return
+            return False
 
         if not check_selected(cron=cron):
-            return
+            return False
 
         if not cron:
             xbmcgui.Dialog().notification("Xtream to M3U", "Syncing to PVR...")
@@ -393,11 +392,13 @@ def sync_to_pvr(cron=False, silent=False):
             )
         else:
             log("[cron_main] Finished cron job - auto_refresh")
+        return True
 
     except Exception as e:
         log(f"[sync_to_pvr] unexpected error: {str(e)}", xbmc.LOGERROR)
         if not cron:
             xbmcgui.Dialog().ok("Xtream to M3U Error", f"Sync failed:\n{str(e)}")
+        return False
 
 
 def get_pvr_instance_info(pvr_instance_id=None):

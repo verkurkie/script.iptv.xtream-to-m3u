@@ -13,7 +13,7 @@ from .pvr_utils import reset_pvr, check_pvr
 ADDON = xbmcaddon.Addon()
 
 
-def select_categories():
+def select_categories(update_pvr=True):
     log("[select_categories] starting category selection process.")
     if not check_pvr():
         return
@@ -134,7 +134,7 @@ def select_categories():
         set_setting("user_categories_ids", ",".join(final_ids))
 
         # Update the playlist with the selected IDs (only if the selection changed)
-        if final_ids != current_selected:
+        if final_ids != current_selected and update_pvr:
             pDialog.create(
                 heading="Xtream to M3U", message="Updating playlist and PVR ..."
             )
