@@ -1,3 +1,7 @@
+v1.2.3
+- fix: error when creating a new PVR instance
+- chore: update addon icon
+
 v1.2.2
 - ci: fix permissions issue with version bump step
 - refactor: replace favorites functionality with kodi group manager shortcut
