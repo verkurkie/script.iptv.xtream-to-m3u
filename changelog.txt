@@ -1,3 +1,6 @@
+v1.2.4
+- fix: update to fix issues during first-time setup
+
 v1.2.3
 - fix: error when creating a new PVR instance
 - chore: update addon icon
