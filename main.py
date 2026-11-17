@@ -1,9 +1,10 @@
 import xbmc
 import xbmcaddon
+import xbmcgui
 import sys
 
 from resources.utils.cron_utils import manage_job
-from resources.utils.common import log, check_selected
+from resources.utils.common import log, check_selected, get_setting
 from resources.utils.system_check import system_check
 from resources.utils.setup import first_setup
 from resources.utils.m3u_utils import make_playlist
@@ -39,10 +40,30 @@ def main():
     action = params.get("action")
     old_cron = ADDON.getSettingString("auto_refresh")
 
+    host = get_setting("xtream_host", window=False) or "http://"
+    setup_required = not (
+        host != "http://"
+        and get_setting("xtream_port", window=False)
+        and get_setting("username", window=False)
+        and get_setting("password", window=False)
+        and get_setting("pvr_instance_id", window=False)
+        and (get_setting("user_categories_ids", window=False) or "").strip()
+    )
+    settings_were_open = setup_required and xbmcgui.getCurrentWindowId() == 10140
+    if settings_were_open:
+        # Close the stale settings snapshot before setup writes new values.
+        xbmc.executebuiltin("SendClick(10140, 28)")
+        xbmc.sleep(400)
+
     first_setup_result = first_setup()
 
     if not first_setup_result:
+        if settings_were_open:
+            ADDON.openSettings()
         return
+
+    if settings_were_open:
+        action = None
 
     # Mapping actions to their corresponding functions
     actions = {
