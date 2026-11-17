@@ -197,6 +197,7 @@ def create_pvr_instance():
         log(f"[create_pvr_instance] successfully created: {new_path}")
 
         xbmcgui.Dialog().notification(
+            "Xtream to M3U",
             f"New PVR instance '{new_name}' (ID: {next_id}) created"
         )
         return {"id": str(next_id), "name": new_name, "path": new_path}
